@@ -53,9 +53,25 @@ If neither exists, skip straight to Step 1.
 If either exists, stop and tell the person what's already there (including which architecture `CLAUDE.md` currently records, if any), then ask explicitly what they want:
 1. **Skip** — project is already initialized, do nothing further
 2. **Re-run the same architecture** — re-applies the template to `core/`/`navigation/` per Step 4, and updates `CLAUDE.md` per the surgical (not whole-file) procedure in Step 5; warn that this may overwrite any hand-edited files under `core/` or `navigation/` before doing it. Step 7's Alignment Check always runs afterward.
-3. **Switch to a different architecture** — treat this as destructive: the existing `core/` files were built for the old pattern and won't automatically match the new one. Require an explicit confirmation naming the switch (e.g. "yes, switch from MVVM to MVI + Clean") before touching anything
+3. **Switch to a different architecture** — destructive; follow "Switching architecture" below exactly.
 
 Regardless of which option is chosen, never touch anything under `feature/` — existing features are always preserved.
+
+### Switching architecture
+
+Run these in order. If any step stops, nothing has been changed yet.
+
+1. **Block if features exist.** List the folders under `feature/`, ignoring `.gitkeep`. If there are any, stop. Explain that they're built on the current pattern's base classes, so switching `core/` would break the build (Step 6 can't go green), and this command never edits `feature/`. The person's options are to keep the current architecture, or to remove or migrate those features themselves and run `/init-project` again. Never offer to migrate them as part of this command.
+2. **Ask which architecture** (Step 1), then read **both** templates fully: the old one (named in `CLAUDE.md`'s `## Architecture`) and the new one.
+3. **Build the change plan** from the two templates' Project Structure sections:
+   - **Delete:** files under `core/` and `navigation/` that the old template lists and the new one doesn't (e.g. MVI-only base classes)
+   - **Replace:** files both templates list but with different contents (e.g. the base ViewModel, `MainActivity`, the error → snackbar converter in `AppSnackbar.kt`)
+   - **Add:** files only the new template lists
+   - **Keep, untouched:** files under `core/` or `navigation/` that neither template lists (added by hand). List them so the person knows they may no longer fit the new pattern, and let Step 7 flag them
+   - **Keep, untouched:** everything architecture-agnostic that is already in place: `project-setup.md` output (build types, signing, keep rules, splash, ktlint, CI), `core-utils.md` files, `core/ui/components/` (except the converter), `core/ui/theme/`, `docs/`, and any real `BASE_URL` values
+   - **Gradle:** dependencies the new template needs that are missing → add. Dependencies only the old one used → list them and ask whether to remove; never remove one silently
+4. **Show the plan and confirm.** Present the full plan as file lists, plus the `CLAUDE.md` changes from Step 5's "Switch" procedure. Proceed only after an explicit confirmation naming the switch, e.g. "yes, switch from MVI + Clean to MVVM". Anything else, including a plain "yes", means ask again.
+5. **Apply** the plan, then continue with Step 5 ("Switch"), Step 6 and Step 7.
 
 ## Step 1 — Ask which architecture pattern
 
@@ -122,7 +138,7 @@ Create `CLAUDE.md` at the repo root with these sections, in this order:
 
 Do **not** regenerate the whole file and do **not** blindly overwrite section-by-section. A project's `CLAUDE.md` accumulates legitimate, deliberate customizations that aren't in the raw template (e.g. a documented legacy-code carve-out, a project-specific file-split convention, a moved file location) — a blind rewrite silently destroys those. Instead, split the sections into two groups and handle each differently:
 
-**A. Verbatim sections** — meant to be an exact copy of the template/shared files, never project-specific: `Hard Rules — Never Violate`, `Do Not Touch`, `Security`, `Architecture Hard Rules`, `Code Style`, `Error Handling`, `Logging`, `Commits`, `Pull Requests`, `Claude's own behavior`, `Response Format`, `Reference Docs`, `Feature Generation`.
+**A. Verbatim sections** — meant to be an exact copy of the template/shared files, never project-specific: `Constraints`, `Hard Rules — Never Violate`, `Do Not Touch`, `Security`, `Architecture Hard Rules`, `Code Style`, `Error Handling`, `Logging`, `Commits`, `Pull Requests`, `Claude's own behavior`, `Response Format`, `Reference Docs`, `Feature Generation`.
 - Diff each section's current text against the template/shared-file's canonical text.
 - Identical → leave untouched.
 - Missing entirely → add it verbatim.
@@ -132,7 +148,16 @@ Do **not** regenerate the whole file and do **not** blindly overwrite section-by
 - Missing entirely → add from the template as a starting point.
 - Already present → do **not** blindly overwrite with the generic template text (this would revert a real `BASE_URL` back to the placeholder, or replace an already-customized file tree with the generic `featureX` skeleton). Leave these as-is; keeping them accurate is Step 7's job, not this step's.
 
-Regardless of first-run or re-run, never touch anything under `feature/`, and never disturb unrelated content already in the file that falls outside the sections above.
+### Switch (`CLAUDE.md` exists — "Switch to a different architecture" from Step 0)
+
+The architecture-specific sections describe the old pattern, so they must change. Everything else follows the re-run rules above.
+
+- **Replace with the new template's text:** `Architecture` (pattern + tech stack), `Defaults`, `Project Structure`, `Constraints`, `Architecture Hard Rules`. If the new template has no `## Architecture Hard Rules`, remove the old block and tell the person — never leave the old pattern's rules in place.
+- **Carry over project-specific facts** from the old sections, but only those that still hold under the new pattern (e.g. a real base URL noted in `Defaults`, a documented legacy-code carve-out). List each one and ask before keeping it.
+- **Shared sections** (`Hard Rules — Never Violate`, `Do Not Touch`, `Security`, `Code Style`, `Error Handling`, `Logging`, `Commits`, `Pull Requests`, `Claude's own behavior`, `Response Format`, `Reference Docs`, `Feature Generation`) aren't architecture-specific: handle them exactly as in the re-run's group A.
+- These replacements were already shown in Step 0's switch plan and confirmed there. Don't ask again; just apply them.
+
+Regardless of first-run, re-run or switch, never touch anything under `feature/`, and never disturb unrelated content already in the file that falls outside the sections above.
 
 ## Step 6 — Verify
 
