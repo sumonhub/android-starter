@@ -35,7 +35,7 @@ Every architecture has its own feature template for `/generate-feature`.
 └── templates/
     ├── architecture/         # scaffold templates, one per pattern
     ├── feature/              # feature generation templates
-    └── shared/               # hard rules, UI components, core utils, project setup, coding standards, git workflow, response format, docs rules
+    └── shared/               # hard rules, UI components, core utils, feature conventions, project setup, coding standards, git workflow, response format, docs rules
 ```
 
 Whichever architecture you pick, every generated project also gets:

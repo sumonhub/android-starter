@@ -5,6 +5,9 @@
 > `safeApiCall`), `core/di/`, `core/ui/`, `navigation/`. Do not recreate any of those files here; only
 > reference/extend them.
 
+> Naming, features without an API, and moving a feature from one screen to two follow
+> `.claude/templates/shared/feature-conventions.md`.
+
 ## Tech stack
 - UI: Jetpack Compose
 - DI: Koin

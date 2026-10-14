@@ -5,6 +5,9 @@
 > `core/error/`, `core/network/`, `core/ui/`, `navigation/`. Do not recreate any of those files
 > here; only reference/extend them.
 
+> Naming, features without an API, and moving a feature from one screen to two follow
+> `.claude/templates/shared/feature-conventions.md`.
+
 ## Tech stack
 - UI: Jetpack Compose
 - DI: Koin
@@ -98,22 +101,18 @@ feature/<feature_name>/
 - The base `UseCase` already wraps `execute()` in try/catch and returns `Result.Error(Failure.Unknown(e))` on unexpected exceptions — UseCase code itself should not add another try/catch
 
 ### data/remote
-- `<Feature>ApiService.kt`: Retrofit interface, standard REST endpoints (list, detail by id, search by query param)
+- `<Feature>ApiService.kt`: Retrofit interface, standard REST endpoints (list, detail by id, search by query param); suspend funs returning `Response<ApiResponse<<Feature>Dto>>` (the envelope from `core/network/`), or `Response<ApiResponse<Unit>>` when success carries no data
 - `dto/<Feature>Dto.kt`: lives in the `dto/` subfolder (the R8 keep rule depends on it), separate from the domain model, mirrors the API JSON shape exactly; every field has `@SerializedName`
 
 ### data/mapper
-- Pure function(s): Dto -> domain model; server dates parsed with `DateTimeFormat`
+- `class <Feature>Mapper : Mapper<<Feature>Dto, <Feature>>` implementing `core/domain/Mapper.kt`; no I/O, no state — Dto -> domain model only; server dates parsed with `DateTimeFormat`
 - Keep all field-mapping/transform logic isolated here, not inline in repository
 
 ### data/repository/`<Feature>RepositoryImpl.kt`
 - Implements the domain repository interface
-- Constructor takes `<Feature>ApiService` (injected via Koin)
-- Calls the ApiService, gets back `NetworkResult` (or catches the Retrofit call directly), maps to a domain `Failure` here:
-  - no internet / `IOException` → `Failure.NoInternet`
-  - non-2xx HTTP response → `Failure.ServerError(code, message)`
-  - anything else unexpected → `Failure.Unknown(throwable)`
-- Maps Dto to domain model via the mapper, wraps in `Result.Success`, and returns
-- **This is the only place `NetworkResult` and Retrofit exceptions are visible** — nothing above this file ever sees them, per the project's Hard Rules
+- Constructor takes `<Feature>ApiService` and `<Feature>Mapper` (injected via Koin)
+- Every call goes through `safeApiCall(apiCall = { ... }, mapper = { ... }).toResult()` (or `safeUnitApiCall { ... }.toResult()`) from `core/network/SafeApiCall.kt`, exactly as the "RepositoryImpl usage" example in `.claude/templates/architecture/mvi-clean.md` — never a hand-written `try/catch` or `response.isSuccessful` check. `safeApiCall` already maps HTTP, envelope and connectivity errors to `Failure`
+- **This is the only place `NetworkResult` and Retrofit types are visible** — nothing above this file ever sees them, per the project's Hard Rules
 
 ### presentation/ (or presentation/screenName/ if the feature has 2+ screens) — for EACH screen
 - **ScreenNameContract.kt**: Intent + State + Effect for this screen, all three declared in this one file:
@@ -142,11 +141,12 @@ feature/<feature_name>/
 
 ### di/`<Feature>Module.kt` (Koin)
 - Define as: `val <feature>Module = module { ... }`
-- `single<<Feature>Repository> { <Feature>RepositoryImpl(get()) }`
+- `factory { <Feature>Mapper() }`
+- `single<<Feature>Repository> { <Feature>RepositoryImpl(get(), get()) }`
 - `single { get<Retrofit>().create(<Feature>ApiService::class.java) }` — reuse existing core Retrofit singleton, do not build a new Retrofit instance per feature
 - `factory { Get<Feature>ListUseCase(get(), get(named("io"))) }` — one factory per UseCase, always passing the IO dispatcher from `core/di/DispatcherModule.kt` as the second constructor argument
 - `viewModel { <Feature>ListViewModel(get(), get()) }` — one per screen ViewModel
-- Register this module in the app-level Koin module list (`modules(coreModules, <feature>Module, ...)`)
+- Register this module in `App.kt` (`modules(coreModules + listOf(<feature>Module))` — append to the existing list)
 
 ## Forms, pickers, dialogs and tests
 - **Forms** — State holds `xxxError: ValidationError?` per field; the ViewModel checks fields with `core/util/Validator` on submit (business rules that need data stay in the UseCase); each field is `AppOutlinedTextField(error = state.xxxError?.toMessage(), maxLength = InputLimits.X)`
