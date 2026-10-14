@@ -1,8 +1,8 @@
 # Shared Core Utilities (all architectures)
 
-> Applies regardless of which architecture pattern was chosen. `/init-project` creates every file below. The usage
-> rules live in `shared/hard-rules.md`, so they reach every project's `CLAUDE.md`. All of these are pure Kotlin except
-> `NavResult.kt`, so a Clean domain layer may use `Validator` and `InputLimits` too.
+> Applies to every project, whatever architecture pattern was chosen. `/init-project` creates every file below. The usage
+> rules live in `shared/hard-rules.md`, so they reach every project's `CLAUDE.md`. All of these files are pure Kotlin except
+> `NavResult.kt`. This means a Clean domain layer may also use `Validator` and `InputLimits`.
 
 ```
 core/util/
@@ -47,13 +47,13 @@ object Validator {
         required(value) ?: length(value, min = InputLimits.PASSWORD_MIN, max = InputLimits.PASSWORD_MAX)
 }
 ```
-The user-facing text lives in the UI layer — `@Composable fun ValidationError.toMessage(): String` in `core/ui/components/AppOutlinedTextField.kt` (see `shared/ui-components.md`).
+The user-facing text lives in the UI layer, in `@Composable fun ValidationError.toMessage(): String` in `core/ui/components/AppOutlinedTextField.kt` (see `shared/ui-components.md`).
 
 **Form pattern** (every form screen):
 - State holds one `xxxError: ValidationError?` per field, never a display string
-- Validate on submit; after the first submit attempt, re-validate a field on each change so the error clears as the user fixes it
+- Validate on submit. After the first submit attempt, re-validate a field on each change. This way the error clears as the user fixes it
 - Submit runs only when every field's error is null
-- Field-format checks (empty, email, length) use `Validator`; business rules that need data (e.g. "email already taken") come from the API/UseCase
+- Field-format checks (empty, email, length) use `Validator`. Business rules that need data (e.g. "email already taken") come from the API/UseCase
 
 ## InputLimits.kt
 
@@ -67,7 +67,7 @@ object InputLimits {
     const val DESCRIPTION_MAX = 500
 }
 ```
-Add a limit here when a new field needs one — `AppOutlinedTextField(maxLength = InputLimits.X)` and `Validator.length(max = InputLimits.X)` use the same constant.
+When a new field needs a limit, add it here. `AppOutlinedTextField(maxLength = InputLimits.X)` and `Validator.length(max = InputLimits.X)` use the same constant.
 
 ## DateTimeFormat.kt
 
@@ -94,8 +94,8 @@ object DateTimeFormat {
         DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT).withLocale(locale).format(instant.atZone(zone))
 }
 ```
-- `java.time` needs minSdk 26+; below that, enable core library desugaring
-- Localized styles (`FormatStyle`) follow the device language — no hand-written patterns like `"dd/MM/yyyy"` unless the design explicitly requires a fixed format, in which case add a named function here
+- `java.time` needs minSdk 26+. Below that, enable core library desugaring
+- Localized styles (`FormatStyle`) follow the device language. Do not use hand-written patterns like `"dd/MM/yyyy"`. The only exception is when the design explicitly requires a fixed format. In that case, add a named function here
 
 ## NavResult.kt
 
@@ -124,6 +124,8 @@ fun <T : Any> NavBackStackEntry.NavResultEffect(key: String, onResult: (T) -> Un
     }
 }
 ```
-- Values must be storable in a `Bundle`: primitives, `String`, `@Parcelize` classes, or lists of those — pass a small result (an id, or a tiny `@Parcelize` model), never a whole screen's data
-- **Inputs** go the other way through route arguments (ids and simple values) — never through `savedStateHandle` or a shared ViewModel
-- Wiring: the picker's screen calls `navController.setNavResult(...)` + `popBackStack()` from its Effect/Event handler in `AppNavGraph`; the caller's `composable(...) { entry -> entry.NavResultEffect<Category>(NavResultKeys.SELECTED_CATEGORY) { viewModel.processIntent(...) /* or viewModel.onCategorySelected(it) */ } }`
+- Values must be storable in a `Bundle`: primitives, `String`, `@Parcelize` classes, or lists of those. Pass a small result (an id, or a tiny `@Parcelize` model). Never pass a whole screen's data
+- **Inputs** go the other way, through route arguments (ids and simple values). Never pass them through `savedStateHandle` or a shared ViewModel
+- Wiring:
+  - The picker's screen calls `navController.setNavResult(...)` + `popBackStack()` from its Effect/Event handler in `AppNavGraph`
+  - The caller uses `composable(...) { entry -> entry.NavResultEffect<Category>(NavResultKeys.SELECTED_CATEGORY) { viewModel.processIntent(...) /* or viewModel.onCategorySelected(it) */ } }`

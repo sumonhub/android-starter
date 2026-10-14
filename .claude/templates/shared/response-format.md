@@ -1,23 +1,23 @@
 # Shared Response Format (all architectures)
 
-> Applies regardless of which architecture pattern was chosen. `/init-project` writes this
-> into every project's `CLAUDE.md`, unmodified. This governs how Claude reports its own work
-> in this project — not a UI or code convention.
+> Applies to every project, whatever architecture pattern was chosen. `/init-project` copies this
+> into every project's `CLAUDE.md` without changes. It sets how Claude reports its own work
+> in this project. It is not a UI or code convention.
 
-For any bug fix, feature, or refactor that touches code, structure the response in two parts:
+For any bug fix, feature, or refactor that touches code, write the response in two parts:
 
 ## Before touching any code (diagnosis)
-- **Issue** — one or two lines: what's broken or requested, in plain terms
-- **Root Cause** — the actual underlying reason, traced to the specific file/function/logic — not just the symptom (e.g. not "list screen crashes", but "`OrderListViewModel.processIntent` calls `.data!!` on a `Result.Error` branch")
-- **Action Plan** — the concrete steps to be taken, in order, before writing any code
+- **Issue** — one or two lines, in plain words: what is broken or what was asked for
+- **Root Cause** — the real underlying reason, traced to the specific file/function/logic. Do not just describe the symptom. For example, not "list screen crashes", but "`OrderListViewModel.processIntent` calls `.data!!` on a `Result.Error` branch"
+- **Action Plan** — the concrete steps you will take, in order, before you write any code
 
 ## After the change is done
-- **What Changed** — files touched + a concise summary of the change (not the full diff repeated)
-- **Why Changed** — ties each change back to the Root Cause above — how this specific edit addresses it
-- **Issue Resolved** — explicit statement of what now works, and how to verify it (what to run, what to click, what output to expect)
+- **What Changed** — the files you touched, plus a short summary of the change. Do not repeat the full diff
+- **Why Changed** — link each change back to the Root Cause above. Say how this specific edit fixes it
+- **Issue Resolved** — state clearly what now works and how to check it (what to run, what to click, what output to expect)
 
 ## When to skip this structure
-- Trivial lookups, explanations, or one-line answers that don't touch code
+- Simple lookups, explanations, or one-line answers that don't touch code
 - The person explicitly asks for a quick/short answer instead
 
-Skipping is the exception, not the default — for anything that changes code in this project, use the full Issue → Root Cause → Action Plan, then What Changed → Why Changed → Issue Resolved structure.
+Skipping is the exception, not the default. For anything that changes code in this project, use the full Issue → Root Cause → Action Plan structure, then What Changed → Why Changed → Issue Resolved.

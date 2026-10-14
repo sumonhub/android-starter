@@ -1,37 +1,39 @@
 # Feature Template: MVVM + Clean Architecture (feature-based, single module)
 
-> Aligned with `.claude/templates/architecture/mvvm-clean.md` and the project's `CLAUDE.md` Hard Rules. This
-> template assumes that shared scaffold already exists — `core/mvvm/`, `core/network/` (`NetworkResult`,
-> `safeApiCall`), `core/di/`, `core/ui/`, `navigation/`. Do not recreate any of those files here; only
-> reference/extend them.
+> This template follows `.claude/templates/architecture/mvvm-clean.md` and the Hard Rules in the project's
+> `CLAUDE.md`. It assumes the shared scaffold already exists: `core/mvvm/`, `core/network/` (`NetworkResult`,
+> `safeApiCall`), `core/di/`, `core/ui/`, `navigation/`. Do not recreate any of these files here. Only
+> reference or extend them.
 
-> Naming, features without an API, and moving a feature from one screen to two follow
+> For naming, features without an API, and moving a feature from one screen to two, follow
 > `.claude/templates/shared/feature-conventions.md`.
 
 ## Tech stack
 - UI: Jetpack Compose
 - DI: Koin
-- Networking: Retrofit (reuses the existing `core/network` `Retrofit` singleton — never build a new one per feature)
+- Networking: Retrofit. Reuse the existing `core/network` `Retrofit` singleton. Never build a new one per feature.
 - Image loading/caching: Coil (coil-compose)
 - Async: Kotlin Coroutines + Flow
 
 ## Architecture Rules (MUST FOLLOW)
-- Pattern: MVVM + Clean Architecture, single module, feature-based
-- Each feature is self-contained under `feature/<feature_name>/` with its own `domain/`, `data/`, `presentation/`, `di/`
-- Dependency direction: `presentation → domain ← data`. `domain/` is pure Kotlin — no Android, Retrofit, Gson or Compose imports (`core/network/NetworkResult` is pure Kotlin and is the domain's result type)
-- The ViewModel calls **UseCases only** — never the Repository or ApiService — and exposes **explicit public functions** (`fun onRefresh()`, `fun onItemClicked(id: String)`), no `processIntent`
-- Do NOT create a shared/common domain module — each feature owns its own domain layer
-- If another feature needs this feature's model, it consumes it via this feature's UseCase or Repository interface only — never import another feature's `data/` or `presentation/` package
-- Theme/design system lives in `core/ui/theme/`, common widgets in `core/ui/components/` — reuse, don't redefine
-- A secondary capability on the same data and same UI area (search, filter, sort) is merged into the existing screen's UiState/ViewModel — not a separate screen
-- Only create a separate screen when it has its own distinct route and distinct UI
+- Pattern: MVVM + Clean Architecture, single module, feature-based.
+- Each feature is self-contained. It lives under `feature/<feature_name>/` and has its own `domain/`, `data/`, `presentation/`, `di/`.
+- Dependency direction: `presentation → domain ← data`.
+- `domain/` is pure Kotlin. It has no Android, Retrofit, Gson or Compose imports. `core/network/NetworkResult` is pure Kotlin, and it is the domain's result type.
+- The ViewModel calls **UseCases only**. It never calls the Repository or ApiService.
+- The ViewModel exposes **explicit public functions** (`fun onRefresh()`, `fun onItemClicked(id: String)`). There is no `processIntent`.
+- Do NOT create a shared/common domain module. Each feature owns its own domain layer.
+- If another feature needs this feature's model, it gets it only through this feature's UseCase or Repository interface. Never import another feature's `data/` or `presentation/` package.
+- The theme/design system lives in `core/ui/theme/`. Common widgets live in `core/ui/components/`. Reuse them. Do not redefine them.
+- Some capabilities (search, filter, sort) work on the same data and the same UI area as an existing screen. Merge them into that screen's UiState/ViewModel. Do not create a separate screen for them.
+- Only create a separate screen when it has its own distinct route and its own distinct UI.
 
 ## Defaults (no need to ask)
-- API base URL: already fixed at project level (`core/network/ApiConfig.kt`) — never ask about it again per feature
-- No auth header beyond whatever `core/di/NetworkModule.kt`'s OkHttp already attaches globally
-- No pagination — plain "return the full list" endpoint, `// TODO: add pagination` comment on the Api method if the list could realistically grow large
+- API base URL: already set at project level in `core/network/ApiConfig.kt`. Never ask about it again for a feature.
+- Auth: do not add any auth header. Use only what OkHttp in `core/di/NetworkModule.kt` already attaches globally.
+- No pagination. Use a plain "return the full list" endpoint. If the list could realistically grow large, add a `// TODO: add pagination` comment on the Api method.
 
-Only ask if the feature description explicitly implies otherwise (e.g. "paginated feed", "requires a login token per-request").
+Ask only if the feature description explicitly points to something different (e.g. "paginated feed", "requires a login token per-request").
 
 ## Folder structure to generate (replace `<Feature>` with the given feature name, e.g. "Order", "Article")
 
@@ -64,87 +66,118 @@ feature/<feature_name>/
     └── <Feature>Module.kt                       (Koin module: `val <feature>Module = module { ... }`)
 ```
 
-> Only introduce a per-screen subfolder (`presentation/<screenName>/` with its own UiState/ViewModel/Screen and
-> optional `components/`) once the feature genuinely has 2+ distinct screens.
+> Add a per-screen subfolder only when the feature really has 2+ distinct screens. Each subfolder is
+> `presentation/<screenName>/`. It has its own UiState/ViewModel/Screen and an optional `components/`.
 
 ## Requirements per layer
 
 ### domain/model
-- Plain Kotlin data class with non-null, UI-ready fields — no Android/Compose/Retrofit/Gson imports
+- A plain Kotlin data class with non-null, UI-ready fields. No Android/Compose/Retrofit/Gson imports.
 
 ### domain/repository (interface)
-- Contract only, returning `NetworkResult<T>` — e.g. `suspend fun getList(): NetworkResult<List<<Feature>>>`, `suspend fun getDetail(id: String): NetworkResult<<Feature>>`
-- No DTOs referenced here
+- Defines the contract only. It returns `NetworkResult<T>`. Examples: `suspend fun getList(): NetworkResult<List<<Feature>>>`, `suspend fun getDetail(id: String): NetworkResult<<Feature>>`
+- No DTOs are referenced here.
 
 ### domain/usecase
-- One class per business action: `class Get<Feature>ListUseCase(private val repository: <Feature>Repository)` with `suspend operator fun invoke(): NetworkResult<List<<Feature>>>`
-- Depends only on the Repository interface, never on Api/Dto
-- Business rules live here — not in the ViewModel or RepositoryImpl; field-format checks (`Validator`) stay in the ViewModel
-- No `try/catch` — `safeApiCall` in the data layer already turned failures into `NetworkResult.Error`
+- One class for each business action: `class Get<Feature>ListUseCase(private val repository: <Feature>Repository)` with `suspend operator fun invoke(): NetworkResult<List<<Feature>>>`
+- Depends only on the Repository interface. Never depends on Api/Dto.
+- Business rules live here. They do not live in the ViewModel or RepositoryImpl.
+- Field-format checks (`Validator`) stay in the ViewModel.
+- No `try/catch`. `safeApiCall` in the data layer already turned failures into `NetworkResult.Error`.
 
 ### data/remote
-- `<Feature>ApiService.kt`: Retrofit interface, standard REST endpoints, each a `suspend fun` returning `Response<<Feature>Dto>` (or `Response<List<...>>`)
-- `dto/<Feature>Dto.kt`: mirrors the API JSON shape exactly; every field has `@SerializedName`, nullable where the backend may omit it. Must stay in `dto/` — the R8 keep rule depends on it
+- `<Feature>ApiService.kt`: a Retrofit interface with standard REST endpoints. Each endpoint is a `suspend fun` that returns `Response<<Feature>Dto>` (or `Response<List<...>>`).
+- `dto/<Feature>Dto.kt`: mirrors the API JSON shape exactly.
+  - Every field has `@SerializedName`.
+  - A field is nullable when the backend may omit it.
+  - The file must stay in `dto/`, because the R8 keep rule depends on it.
 
 ### data/mapper
-- Pure extension functions (`fun <Feature>Dto.toDomain(): <Feature>`); defaults for missing fields and server-string → enum mapping live here
+- Pure extension functions (`fun <Feature>Dto.toDomain(): <Feature>`). Defaults for missing fields go here. Server-string → enum mapping also goes here.
 
 ### data/repository/`<Feature>RepositoryImpl.kt`
-- Implements the domain interface; constructor takes `<Feature>ApiService`
-- Every call goes through `safeApiCall { api.getList() }` from `core/network` — never a hand-written `try/catch` or `response.isSuccessful` check here
-- Maps the DTO to the domain model before returning — DTOs never leave `data/`
-- Retrofit suspend calls are main-safe — inject a dispatcher (`get(named("io"))`) only if the implementation does blocking or heavy work itself
+- Implements the domain interface. Its constructor takes `<Feature>ApiService`.
+- Every call goes through `safeApiCall { api.getList() }` from `core/network`. Never write your own `try/catch` or `response.isSuccessful` check here.
+- Before returning, it maps the DTO to the domain model. DTOs never leave `data/`.
+- Retrofit suspend calls are main-safe. Inject a dispatcher (`get(named("io"))`) only if the implementation itself does blocking or heavy work.
 
 ### presentation/ — for EACH screen
 - **UiState.kt**:
-  - `data class <Feature>UiState(...) : UiState` — only `val` + immutable collections; must include `isLoading: Boolean`, `error: NetworkResult.Error?` (not a display string — converted at render time) and, for server-data screens, `isRefreshing: Boolean`, plus screen data. Search/filter fields go here too
-  - `sealed interface <Feature>UiEvent : UiEvent` — one-shot events only (NavigateToDetail, ShowToast). Anything that must survive rotation belongs in UiState
+  - `data class <Feature>UiState(...) : UiState`. Use only `val` and immutable collections. It must include:
+    - `isLoading: Boolean`
+    - `error: NetworkResult.Error?`. This is not a display string. It is converted when the screen renders.
+    - `isRefreshing: Boolean`, for server-data screens
+    - the screen data
+    - search/filter fields, if any
+  - `sealed interface <Feature>UiEvent : UiEvent`. Use it for one-shot events only (NavigateToDetail, ShowToast). Anything that must survive rotation belongs in UiState.
 - **ViewModel.kt**:
-  - Extends `core/mvvm/BaseViewModel<<Feature>UiState>` — never redeclares `MutableStateFlow`/`Channel`
-  - Constructor-injects UseCases only (via Koin); loads initial data in `init { load() }`
-  - One public function per user action, including `onRefresh()`, `onRetry()` and `onErrorDismissed()` (clears `error`); work runs in `launchSafely { ... }` (inherited from `BaseViewModel`, never raw `viewModelScope.launch`), results handled with `when (val result = getListUseCase())` → `setState { copy(...) }`; one-shot events via `sendEvent(...)`. No `try/catch`
-  - Overrides `handleError(throwable)`: `setState { copy(isLoading = false, error = NetworkResult.Error(cause = throwable)) }` — mandatory
-  - Debounce search input (300ms) with a cancellable `Job` if search exists
+  - Extends `core/mvvm/BaseViewModel<<Feature>UiState>`. Never redeclares `MutableStateFlow`/`Channel`.
+  - Gets UseCases only, by constructor injection (via Koin).
+  - Loads initial data in `init { load() }`.
+  - Has one public function for each user action. This includes `onRefresh()`, `onRetry()` and `onErrorDismissed()`. `onErrorDismissed()` clears `error`.
+  - Runs work in `launchSafely { ... }`, which it inherits from `BaseViewModel`. Never uses raw `viewModelScope.launch`.
+  - Handles results with `when (val result = getListUseCase())` → `setState { copy(...) }`.
+  - Sends one-shot events with `sendEvent(...)`.
+  - No `try/catch`.
+  - Must override `handleError(throwable)`: `setState { copy(isLoading = false, error = NetworkResult.Error(cause = throwable)) }`
+  - If search exists, debounces search input (300ms) with a cancellable `Job`.
 - **Screen.kt**:
-  - Resolves the ViewModel with `koinViewModel()`, collects `state` with `collectAsStateWithLifecycle()` and `event` inside `LaunchedEffect(Unit) { viewModel.event.collect { ... } }`
-  - Split into a stateful `<Feature>Screen()` (ViewModel wiring) and a stateless `<Feature>Content(state, onRefresh, onItemClick, ...)` that the `@Preview` renders with sample state
-  - Body composes inside `AppScreen`, per the "Screen usage" example in `.claude/templates/shared/ui-components.md`: `loading = LoadingState(state.isLoading)`, `snackbarMessage = state.error.toErrorMessage(onRetry = ..., onDismiss = ...)`, `empty = EmptyState(...).takeIf { !state.isLoading && <no data> }`, and `refresh = RefreshState(state.isRefreshing, ...)` for server-data screens or `refresh = null` for forms/static screens
-  - Uses `AppTopBar`, `AppButton`, `AppChip`, `Avatar` from `core/ui/components/` — never the raw Material equivalents; images via Coil's `AsyncImage`
+  - Resolves the ViewModel with `koinViewModel()`.
+  - Collects `state` with `collectAsStateWithLifecycle()`.
+  - Collects `event` inside `LaunchedEffect(Unit) { viewModel.event.collect { ... } }`.
+  - Is split into two functions:
+    - a stateful `<Feature>Screen()` that wires the ViewModel
+    - a stateless `<Feature>Content(state, onRefresh, onItemClick, ...)`. The `@Preview` renders it with sample state.
+  - Composes its body inside `AppScreen`, as in the "Screen usage" example in `.claude/templates/shared/ui-components.md`. Pass:
+    - `loading = LoadingState(state.isLoading)`
+    - `snackbarMessage = state.error.toErrorMessage(onRetry = ..., onDismiss = ...)`
+    - `empty = EmptyState(...).takeIf { !state.isLoading && <no data> }`
+    - `refresh = RefreshState(state.isRefreshing, ...)` for server-data screens, or `refresh = null` for forms/static screens
+  - Uses `AppTopBar`, `AppButton`, `AppChip`, `Avatar` from `core/ui/components/`. Never uses the raw Material equivalents.
+  - Loads images with Coil's `AsyncImage`.
 
 ### di/`<Feature>Module.kt` (Koin)
-- `single { get<Retrofit>().create(<Feature>ApiService::class.java) }` — reuse the core Retrofit singleton
+- `single { get<Retrofit>().create(<Feature>ApiService::class.java) }`. Reuse the core Retrofit singleton.
 - `single<<Feature>Repository> { <Feature>RepositoryImpl(get()) }`
-- `factory { Get<Feature>ListUseCase(get()) }` — one factory per UseCase
-- `viewModel { <Feature>ViewModel(get(), get()) }` — one per screen ViewModel
-- Register the module in `App.kt` (`modules(coreModules + listOf(<feature>Module))`)
+- `factory { Get<Feature>ListUseCase(get()) }`. Add one factory for each UseCase.
+- `viewModel { <Feature>ViewModel(get(), get()) }`. Add one for each screen ViewModel.
+- Register the module in `App.kt` (`modules(coreModules + listOf(<feature>Module))`).
 
 ## Forms, pickers, dialogs and tests
-- **Forms** — State holds `xxxError: ValidationError?` per field; the ViewModel checks fields with `core/util/Validator` on submit (business rules that need data stay in the UseCase); each field is `AppOutlinedTextField(error = state.xxxError?.toMessage(), maxLength = InputLimits.X)`
-- **Returning a value** (pickers) — the picker screen hands its result back with `navController.setNavResult(NavResultKeys.X, value)` + `popBackStack()` in `AppNavGraph`; the caller registers `entry.NavResultEffect(NavResultKeys.X) { ... }` — see `.claude/templates/shared/core-utils.md`
-- **Dialogs & sheets** — a `showXDialog` / `showXSheet` State flag + `AppConfirmDialog` / `AppBottomSheet` / `SearchableBottomSheet`
-- **Dates** — the mapper parses server dates with `DateTimeFormat.parseInstant` / `parseDate`; the Screen formats them with `DateTimeFormat.date(...)` etc.
-- **Tests** (`app/src/test/java/<package>/feature/<feature_name>/`), generated with the feature:
-  - `presentation/<Screen>ViewModelTest.kt` per ViewModel — success, error, and one Effect/Event path, using `MainDispatcherRule` + Turbine
-  - `data/mapper/<Feature>MapperTest.kt` — DTO with missing/null fields maps to safe defaults
-  - Fakes, no mocking library: `Fake<Feature>Repository` implementing the domain repository interface
+- **Forms**:
+  - State holds one `xxxError: ValidationError?` for each field.
+  - On submit, the ViewModel checks the fields with `core/util/Validator`.
+  - Business rules that need data stay in the UseCase.
+  - Each field is `AppOutlinedTextField(error = state.xxxError?.toMessage(), maxLength = InputLimits.X)`.
+- **Returning a value** (pickers):
+  - The picker screen sends its result back with `navController.setNavResult(NavResultKeys.X, value)` + `popBackStack()` in `AppNavGraph`.
+  - The caller registers `entry.NavResultEffect(NavResultKeys.X) { ... }`.
+  - See `.claude/templates/shared/core-utils.md`.
+- **Dialogs & sheets**: use a `showXDialog` / `showXSheet` State flag with `AppConfirmDialog` / `AppBottomSheet` / `SearchableBottomSheet`.
+- **Dates**: the mapper parses server dates with `DateTimeFormat.parseInstant` / `parseDate`. The Screen formats them with `DateTimeFormat.date(...)` etc.
+- **Tests** (`app/src/test/java/<package>/feature/<feature_name>/`): generate them with the feature.
+  - `presentation/<Screen>ViewModelTest.kt`: one for each ViewModel. Cover success, error, and one Effect/Event path. Use `MainDispatcherRule` + Turbine.
+  - `data/mapper/<Feature>MapperTest.kt`: check that a DTO with missing/null fields maps to safe defaults.
+  - Use fakes, not a mocking library. `Fake<Feature>Repository` implements the domain repository interface.
 
 ## Navigation wiring
-- Add the feature's route constants to the shared `navigation/Routes.kt` (e.g. `const val FEATURE_LIST = "feature_list"`, `const val FEATURE_DETAIL = "feature_detail/{id}"`)
-- Register the composables in `navigation/AppNavGraph.kt`
-- This is the only change made to a shared/core file — everything else stays inside `feature/<feature_name>/`
+- Add the feature's route constants to the shared `navigation/Routes.kt` (e.g. `const val FEATURE_LIST = "feature_list"`, `const val FEATURE_DETAIL = "feature_detail/{id}"`).
+- Register the composables in `navigation/AppNavGraph.kt`.
+- This is the only change to a shared/core file. Everything else stays inside `feature/<feature_name>/`.
 
 ## Cross-feature consumption pattern (when relevant)
-- Another feature that needs this feature's data injects this feature's UseCase (or Repository interface) via Koin constructor injection, wired with `get()` in its own module
-- Never duplicate the model in another feature; never import this feature's `data/` or `presentation/` from outside
+- If another feature needs this feature's data, it injects this feature's UseCase (or Repository interface) by Koin constructor injection. It wires this with `get()` in its own module.
+- Never duplicate the model in another feature.
+- Never import this feature's `data/` or `presentation/` from outside this feature.
 
 ## Constraints
-- No API/Repository calls from the ViewModel — always UseCase → Repository
-- Keep DTO and domain model strictly separate — always map, never reuse a DTO as the domain/UI model
-- Explicit `isLoading` / `error` fields in every UiState — never infer status from nullable data
-- Every screen follows the same 3-file pattern (UiState, ViewModel, Screen)
-- Dependencies come from Koin (`get()`, `koinViewModel()`) — no manual instantiation
-- Every rule in the project's `CLAUDE.md` `## Hard Rules — Never Violate` applies here too
-- When anything is unclear — ask before generating
+- The ViewModel makes no API/Repository calls. It always goes UseCase → Repository.
+- Keep the DTO and the domain model strictly separate. Always map. Never reuse a DTO as the domain/UI model.
+- Every UiState has explicit `isLoading` / `error` fields. Never infer status from nullable data.
+- Every screen follows the same 3-file pattern (UiState, ViewModel, Screen).
+- Dependencies come from Koin (`get()`, `koinViewModel()`). Never create dependencies by hand.
+- Every rule in the project's `CLAUDE.md` `## Hard Rules — Never Violate` applies here too.
+- When anything is unclear, ask before generating.
 
 ## Deliverable
-When given a feature name, generate this full folder structure plus its tests (see "Forms, pickers, dialogs and tests") with working, compilable Kotlin + Compose code following all rules above, and wire its routes into the shared `navigation/` files.
+When given a feature name, generate this full folder structure and its tests (see "Forms, pickers, dialogs and tests"). Write working, compilable Kotlin + Compose code that follows all rules above. Wire the feature's routes into the shared `navigation/` files.

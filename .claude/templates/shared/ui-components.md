@@ -1,11 +1,13 @@
 # Shared UI Components (all architectures)
 
-> Applies regardless of which architecture pattern was chosen. `/init-project` scaffolds every component below into
-> `core/ui/components/` for every architecture, plus the error → snackbar converter for the chosen architecture
-> (last section). The usage rules live in `shared/hard-rules.md` (`UI components`), so they reach every project's `CLAUDE.md`.
+> This file applies to every architecture pattern.
+> For every architecture, `/init-project` creates every component below in `core/ui/components/`.
+> It also creates the error → snackbar converter for the chosen architecture (see the last section).
+> The usage rules are in `shared/hard-rules.md` (`UI components`). That way they reach every project's `CLAUDE.md`.
 >
-> Every component file ends with `@Preview`(s) wrapped in `AppTheme` with representative sample values — not shown
-> below, to keep this file short. Grow a component's params when a real need appears — never fork it per screen or feature.
+> Every component file ends with one or more `@Preview`s. Each preview is wrapped in `AppTheme` and uses typical sample values.
+> The previews are not shown below, to keep this file short.
+> When a real need appears, add params to the component. Never make a separate copy of it for one screen or feature.
 
 ## Components
 
@@ -30,24 +32,34 @@ core/ui/components/
 ```
 
 **Needs:**
-- Gradle: Compose material3 **1.3+** (`PullToRefreshBox`), `androidx.compose.material:material-icons-core` (material3 no longer brings icons transitively), Coil 3 `coil-compose` + `coil-network-okhttp` (Avatar loads from URLs), and `buildFeatures { buildConfig = true }` (`BuildConfig.DEBUG`)
+- Gradle:
+  - Compose material3 **1.3+**. It is needed for `PullToRefreshBox`.
+  - `androidx.compose.material:material-icons-core`. material3 no longer includes the icons, so add this yourself.
+  - Coil 3 `coil-compose` + `coil-network-okhttp`. Avatar uses them to load images from URLs.
+  - `buildFeatures { buildConfig = true }`. It is needed for `BuildConfig.DEBUG`.
 - `Dimens.kt` tokens: `spacingXSmall` (4.dp), `spacingSmall` (8.dp), `spacingMedium` (16.dp), `spacingLarge` (24.dp), `iconSmall` (18.dp), `buttonHeight` (48.dp), `avatarSmall` (32.dp), `avatarMedium` (48.dp), `avatarLarge` (72.dp), `illustrationSize` (96.dp)
 - Strings in `values/strings.xml` **and every other locale**: `txt_retry`, `txt_error_details`, `cd_back`, `error_no_internet`, `error_timeout`, `error_unauthorized`, `error_server`, `error_generic`, `txt_search`, `cd_clear_search`, `txt_no_results`, `txt_confirm`, `txt_cancel`, `txt_show`, `txt_hide`, `error_field_required`, `error_invalid_email`, `error_invalid_phone`, `error_too_short` (`%1$d`), `error_too_long` (`%1$d`)
-- `core/util/Validator.kt` and `InputLimits.kt` from `shared/core-utils.md` (used by `AppOutlinedTextField`)
+- `core/util/Validator.kt` and `InputLimits.kt` from `shared/core-utils.md`. `AppOutlinedTextField` uses them.
 
 ## AppScreen.kt
 
 **What it does for every screen (no per-screen code needed):**
-- Edge-to-edge `Scaffold` (`WindowInsets.safeDrawing`) + `Dimens.spacingMedium` content padding
-- Tap outside a field → clears focus and hides the keyboard
-- `loading: LoadingState` — `isLoading`, `display` and `blockInput`:
-  - `LoadingDisplay.Line` (default) — thin progress line under the top bar, content stays visible
-  - `LoadingDisplay.Skeleton` — no line; the screen draws its own shimmer skeleton (first load)
-  - `LoadingDisplay.ReplaceContent` — centered `LoadingIndicator` instead of the body
-- While loading, **all touches on the content are blocked** (`blockInput = true` default) and `AppTopBar`'s actions lock via `LocalScreenInputBlocked` — Back, bottom bar, FAB and the snackbar's Retry stay usable
-- `empty: EmptyState?` — non-null means "nothing to show" → `EmptyView` replaces the body. **If an Error snackbar is also set, `ErrorView` (with its Retry) replaces the body instead and no snackbar is shown** — a failed first load never reads as "No items"
-- `refresh: RefreshState?` — **required, no default**: `RefreshState(isRefreshing, onRefresh)` wraps the body in `PullToRefreshBox`; `null` means no pull-to-refresh
-- `snackbarMessage: AppSnackbar?` — the screen's one snackbar for Error/Info/Success/Warning
+- Edge-to-edge `Scaffold` (`WindowInsets.safeDrawing`) with `Dimens.spacingMedium` padding around the content.
+- When the user taps outside a field, it clears focus and hides the keyboard.
+- `loading: LoadingState` has three fields: `isLoading`, `display` and `blockInput`. `display` is one of:
+  - `LoadingDisplay.Line` (default): a thin progress line under the top bar. The content stays visible.
+  - `LoadingDisplay.Skeleton`: no line. The screen draws its own shimmer skeleton (for the first load).
+  - `LoadingDisplay.ReplaceContent`: a centered `LoadingIndicator` in place of the body.
+- While loading, **all touches on the content are blocked** (`blockInput = true` is the default).
+  - `AppTopBar`'s actions are also locked, through `LocalScreenInputBlocked`.
+  - Back, the bottom bar, the FAB and the snackbar's Retry stay usable.
+- `empty: EmptyState?`: a non-null value means "nothing to show". `EmptyView` then replaces the body.
+  - **If an Error snackbar is also set, `ErrorView` (with its Retry) replaces the body instead, and no snackbar is shown.**
+  - This way a failed first load never looks like "No items".
+- `refresh: RefreshState?`: **required, with no default.**
+  - `RefreshState(isRefreshing, onRefresh)` wraps the body in `PullToRefreshBox`.
+  - `null` means the screen has no pull-to-refresh.
+- `snackbarMessage: AppSnackbar?`: the screen's single snackbar, used for Error, Info, Success and Warning.
 
 ```kotlin
 /** How AppScreen shows that it's loading. */
@@ -190,7 +202,9 @@ fun AppScreen(
 }
 ```
 
-**`rememberMinimumLoading` (public, same file)** — keeps any loading UI on screen for at least `MIN_LOADING_VISIBLE_MS` once shown, so a fast response never flashes a loader. UI-only — the data is never delayed:
+**`rememberMinimumLoading` (public, same file)**: once any loading UI is shown, this keeps it on screen for at least `MIN_LOADING_VISIBLE_MS`.
+This stops a loader from flashing briefly when the response is fast.
+It only affects the UI. The data is never delayed.
 ```kotlin
 const val MIN_LOADING_VISIBLE_MS = 1_000L
 
@@ -214,7 +228,7 @@ fun rememberMinimumLoading(isLoading: Boolean, minVisibleMs: Long = MIN_LOADING_
     return shown || isLoading
 }
 ```
-A screen that draws its **own first-load skeleton** renders the skeleton **instead of** the data, never above it:
+Some screens draw their **own first-load skeleton**. Such a screen shows the skeleton **instead of** the data. It never shows the skeleton above the data.
 ```kotlin
 val isInitialLoad = rememberMinimumLoading(state.isLoading && state.items.isEmpty())
 AppScreen(
@@ -228,14 +242,23 @@ AppScreen(
 }
 ```
 
-**`AppSnackbarHost` (private, same file)** — draws an `AppSnackbar`. It must keep these behaviours, each of which fixes a real bug:
-- `AppMessageType` → accent colour in one `when` (the only place to change the palette); container = 10% accent tint `compositeOver(colorScheme.surface)` so it stays opaque over content
-- Remembers the `last` non-null message so the exit animation still has something to draw after `message` goes null
-- Auto-dismiss: `LaunchedEffect(isVisible, attempt, message?.text, message?.type)` → `delay(duration.millis)` → `onDismiss()`; `Indefinite` (`millis == null`) never auto-dismisses. `attempt` is bumped on every action tap, so a retry that fails with the **same** text still gets a fresh window. Read `onDismiss` through `rememberUpdatedState`
-- Swipe-dismiss via `SwipeToDismissBox`, reacting to `snapshotFlow { dismissState.currentValue }` — **not** `confirmValueChange`/`targetValue` (dismissing mid-swipe makes the two animations fight and leaves a sliver stuck on screen); `dismissState.reset()` when a new message shows
-- Text uses `MaterialTheme.typography.bodyMedium`, max 2 lines, ellipsis
-- `if (BuildConfig.DEBUG && details != null)` → "Details" button (`R.string.txt_error_details`) opening a bottom sheet with the details in a `SelectionContainer` + vertical scroll
-- `actionLabel` + `onAction` → `TextButton` (bumps `attempt`, then calls `onAction`)
+**`AppSnackbarHost` (private, same file)**: draws an `AppSnackbar`. It must keep all of these behaviours. Each one fixes a real bug.
+- Colours:
+  - One `when` maps each `AppMessageType` to an accent colour. This is the only place to change the palette.
+  - The container colour is a 10% tint of the accent, `compositeOver(colorScheme.surface)`. This keeps it opaque over the content.
+- It remembers the `last` non-null message. After `message` becomes null, the exit animation still has something to draw.
+- Auto-dismiss:
+  - Flow: `LaunchedEffect(isVisible, attempt, message?.text, message?.type)` → `delay(duration.millis)` → `onDismiss()`.
+  - `Indefinite` (`millis == null`) never auto-dismisses.
+  - `attempt` goes up by one on every action tap. So when a retry fails with the **same** text, the message still gets a new full display time.
+  - Read `onDismiss` through `rememberUpdatedState`.
+- Swipe-dismiss:
+  - Use `SwipeToDismissBox` and react to `snapshotFlow { dismissState.currentValue }`.
+  - Do **not** use `confirmValueChange`/`targetValue`. If you dismiss in the middle of a swipe, the two animations fight, and a thin strip of the snackbar stays stuck on screen.
+  - Call `dismissState.reset()` when a new message shows.
+- Text uses `MaterialTheme.typography.bodyMedium`, at most 2 lines, with an ellipsis.
+- `if (BuildConfig.DEBUG && details != null)`: show a "Details" button (`R.string.txt_error_details`). It opens a bottom sheet. The sheet shows the details in a `SelectionContainer` with vertical scroll.
+- `actionLabel` + `onAction` → a `TextButton`. On tap, it first increases `attempt`, then calls `onAction`.
 
 ## AppSnackbar.kt
 
@@ -286,7 +309,7 @@ fun errorSnackbarMessage(
     }
 }
 ```
-The architecture's `toErrorMessage()` converter (last section) goes in this same file.
+Put the architecture's `toErrorMessage()` converter (see the last section) in this same file.
 
 ## AppTopBar.kt
 
@@ -353,7 +376,8 @@ fun AppButton(
     }
 }
 ```
-`enabled` is for form validity (e.g. "Submit" disabled until the form is valid) — never for loading; AppScreen already blocks input while loading.
+`enabled` is for form validity. For example, "Submit" stays disabled until the form is valid.
+Never use it for loading. AppScreen already blocks input while loading.
 
 ## AppChip.kt
 
@@ -379,7 +403,7 @@ fun AppChip(
     )
 }
 ```
-The selected state comes from the chip's own colours — the label keeps the same typography token.
+The chip's own colours show the selected state. The label keeps the same typography token.
 
 ## Avatar.kt
 
@@ -559,7 +583,8 @@ fun SearchTextField(
     )
 }
 ```
-Server search: the ViewModel debounces the query (300ms) before calling the API. Searching a list already in memory: filter in the ViewModel, or use `SearchableBottomSheet`.
+- Server search: the ViewModel debounces the query (300ms) before it calls the API.
+- Search in a list that is already in memory: filter in the ViewModel, or use `SearchableBottomSheet`.
 
 ## AppBottomSheet.kt
 
@@ -701,7 +726,8 @@ fun AppConfirmDialog(
     )
 }
 ```
-Whether a dialog or sheet is showing is a State flag (`showDeleteDialog: Boolean`) changed through an Intent / ViewModel function — never an Effect, or it disappears on rotation.
+Keep "is this dialog or sheet showing?" in a State flag (`showDeleteDialog: Boolean`). Change it through an Intent / ViewModel function.
+Never use an Effect for it. An Effect is lost on rotation, so the dialog would disappear.
 
 ## Screen usage — the shape every feature screen follows
 
@@ -719,11 +745,15 @@ AppScreen(
     OrderList(orders = state.orders, onClick = onOrderClick)
 }
 ```
-`onRetry` / `onErrorDismissed` / `onRefresh` call the ViewModel the architecture's way (`processIntent(...)` in MVI, a public function in MVVM). In MVI + Clean the State carries `status: UiStatus(isLoading, failure)` → `state.status.isLoading` and `state.status.toErrorMessage(...)`.
+`onRetry` / `onErrorDismissed` / `onRefresh` call the ViewModel in the way the architecture uses:
+- MVI: `processIntent(...)`.
+- MVVM: a public function.
+
+In MVI + Clean, the State holds `status: UiStatus(isLoading, failure)`. So use `state.status.isLoading` and `state.status.toErrorMessage(...)`.
 
 ## Error → snackbar converter (one per architecture, in `AppSnackbar.kt`)
 
-**MVI + Clean** — `UiStatus` / `Failure` (from `core/error/`, which stays free of UI and string resources):
+**MVI + Clean**: converts `UiStatus` / `Failure`. These come from `core/error/`, which stays free of UI code and string resources.
 ```kotlin
 @Composable
 fun UiStatus.toErrorMessage(onRetry: (() -> Unit)? = null, onDismiss: () -> Unit = {}): AppSnackbar? =
@@ -744,7 +774,7 @@ fun Failure.toMessage(): String = when (this) {
 }
 ```
 
-**MVI, MVVM, MVVM + Clean** — `NetworkResult.Error`:
+**MVI, MVVM, MVVM + Clean**: converts `NetworkResult.Error`.
 ```kotlin
 @Composable
 fun NetworkResult.Error?.toErrorMessage(onRetry: (() -> Unit)? = null, onDismiss: () -> Unit = {}): AppSnackbar? {

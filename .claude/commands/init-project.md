@@ -4,91 +4,103 @@ description: Bootstrap a brand-new project's shared architecture foundation (inf
 
 # /init-project
 
-You are scaffolding a **new project's shared foundation**. No feature code — infra, DI, theme, base classes, nav shell only.
+You are scaffolding a **new project's shared foundation**. Do not write feature code. Create only infra, DI, theme, base classes and the nav shell.
 
 ## Rules
-- When anything is unclear — ask before generating. This applies to every step below: the architecture choice, anything not covered by the template's defaults, and anything else that comes up mid-scaffold. Never guess and proceed.
+- If anything is unclear, ask before you generate anything. Never guess and continue. This rule applies to every step below: the architecture choice, anything the template's defaults don't cover, and anything else that comes up during the scaffold.
 
 ## Preflight — Check prerequisites (runs before Step 0)
 
-Before asking anything, check that the project can take the scaffold. Run every check below, then report them all at once. Don't stop at the first failure, so the person can fix everything in one pass.
+Before you ask anything, check that the project is ready for the scaffold. Run every check below. Then report all the results at once. Don't stop at the first failure. This way the person can fix everything in one pass.
 
 ### Blockers: stop if any of these fail
 
 | Check | How to detect | How to fix (tell the person) |
 |---|---|---|
-| Gradle Kotlin DSL | `settings.gradle.kts` at the root and `build.gradle.kts` in the app module (not `.gradle` Groovy files) | Create a new project in Android Studio (Kotlin DSL is the default), or convert the build files to `.kts` |
-| Version catalog | `gradle/libs.versions.toml` exists | Android Studio → **Refactor → Migrate to Version Catalog**, or create a new project (it ships one) |
-| AGP 9+ | `agp` version in `libs.versions.toml` | Android Studio → **Tools → AGP Upgrade Assistant**, upgrade to 9.x |
-| Kotlin 2.0+ | `kotlin` version in `libs.versions.toml` (Compose needs the `org.jetbrains.kotlin.plugin.compose` plugin, which only exists from Kotlin 2.0) | Bump `kotlin` in `libs.versions.toml` to 2.x and sync |
-| Gradle wrapper + JDK 17+ | `gradlew` / `gradlew.bat` exist and `./gradlew --version` succeeds, showing JVM 17+ (Step 6 depends on it) | Android Studio → **Settings → Build, Execution, Deployment → Build Tools → Gradle → Gradle JDK**: pick 17+. Set `JAVA_HOME` to the same JDK for the terminal |
+| Gradle Kotlin DSL | `settings.gradle.kts` is at the root and `build.gradle.kts` is in the app module (not Groovy `.gradle` files) | Create a new project in Android Studio (Kotlin DSL is the default). Or convert the build files to `.kts` |
+| Version catalog | `gradle/libs.versions.toml` exists | Android Studio → **Refactor → Migrate to Version Catalog**. Or create a new project (new projects include one) |
+| AGP 9+ | `agp` version in `libs.versions.toml` | Android Studio → **Tools → AGP Upgrade Assistant**. Upgrade to 9.x |
+| Kotlin 2.0+ | `kotlin` version in `libs.versions.toml`. Compose needs the `org.jetbrains.kotlin.plugin.compose` plugin, and this plugin exists only from Kotlin 2.0 | Change `kotlin` in `libs.versions.toml` to 2.x and sync |
+| Gradle wrapper + JDK 17+ | `gradlew` / `gradlew.bat` exist. `./gradlew --version` succeeds and shows JVM 17+. Step 6 depends on this | Android Studio → **Settings → Build, Execution, Deployment → Build Tools → Gradle → Gradle JDK**: pick 17+. Set `JAVA_HOME` to the same JDK for the terminal |
 | Not an XML / View-based UI | See "XML / View-based projects" below | See below |
 
 ### Handled by the scaffold: report only, don't stop
 
-- **Compose not set up yet**: missing Compose BOM/material3, missing `kotlin-compose` plugin, or no `buildFeatures { compose = true }`. Step 4 adds all of these from the template's Gradle section. Say "will be added".
-- **minSdk below 26**: `java.time` in `core-utils.md` needs core library desugaring. Step 4 enables it. Say "desugaring will be enabled".
+- **Compose not set up yet**: the Compose BOM/material3 is missing, the `kotlin-compose` plugin is missing, or there is no `buildFeatures { compose = true }`. Step 4 adds all of these from the template's Gradle section. Say "will be added".
+- **minSdk below 26**: `java.time` in `core-utils.md` needs core library desugaring. Step 4 turns it on. Say "desugaring will be enabled".
 
 ### XML / View-based projects
 
 Treat the project as View-based if any of these exist: layout files under `res/layout/`, `setContentView(R.layout.…)`, `Fragment` subclasses, or `viewBinding`/`dataBinding = true`.
 
-Every template is Compose-only. Step 4 rewrites `MainActivity` to `setContent { AppTheme { AppNavGraph() } }`, and `/generate-screen` and `/generate-feature` only produce Compose. Running the scaffold on a View-based app would disconnect its existing screens from the entry point and leave two UI systems side by side. So:
+Every template is Compose-only. Step 4 rewrites `MainActivity` to `setContent { AppTheme { AppNavGraph() } }`. `/generate-screen` and `/generate-feature` only produce Compose. If you run the scaffold on a View-based app, its existing screens lose their connection to the entry point. The app also ends up with two UI systems side by side. So:
 
-- **Untouched "Empty Views Activity" template**: the only View code is the default `MainActivity` + `activity_main.xml`, with nothing added by hand. Explain this and offer to convert it to Compose: replace `MainActivity` with the template's version, delete `activity_main.xml`, and let Step 4 add Compose. Proceed only after an explicit "yes, convert to Compose".
-- **Anything beyond that** (real XML screens, Fragments, bindings): stop. Explain that this kit doesn't support View-based or hybrid projects, and recommend creating a new project with Android Studio's **Empty Activity** (Compose) template, then porting the code into features with `/generate-feature`. Never scaffold on top of it.
+- **Untouched "Empty Views Activity" template**: the only View code is the default `MainActivity` + `activity_main.xml`, and nobody added anything by hand. Explain this and offer to convert it to Compose:
+  - replace `MainActivity` with the template's version
+  - delete `activity_main.xml`
+  - let Step 4 add Compose
+
+  Continue only after an explicit "yes, convert to Compose".
+- **Anything beyond that** (real XML screens, Fragments, bindings): stop. Explain that this kit doesn't support View-based or hybrid projects. Recommend that the person creates a new project with Android Studio's **Empty Activity** (Compose) template, then ports the code into features with `/generate-feature`. Never scaffold on top of it.
 
 ### Report format
 
-Show a single checklist: ✅ passes, ⚠️ handled by the scaffold, ❌ blocker, plus the fix for each ❌. If there's any ❌, stop here and ask the person to fix them and run `/init-project` again. Never fix a blocker yourself: they touch the build setup and `libs.versions.toml`, which are protected by the hard rules. If everything is ✅/⚠️, continue to Step 0.
+Show one checklist: ✅ passes, ⚠️ handled by the scaffold, ❌ blocker. Add the fix for each ❌.
+- If there is any ❌, stop here. Ask the person to fix the blockers and run `/init-project` again.
+- Never fix a blocker yourself. Blockers touch the build setup and `libs.versions.toml`, and the hard rules protect those.
+- If everything is ✅/⚠️, continue to Step 0.
 
 ## Step 0 — Check for an existing scaffold
 
-Before asking anything else, check whether this project has already been initialized:
+Before you ask anything else, check whether this project is already initialized:
 - Does `CLAUDE.md` exist at the root with an `## Architecture` section?
 - Does `core/` already exist under the app module?
 
-If neither exists, skip straight to Step 1.
+If neither exists, go straight to Step 1.
 
-If either exists, stop and tell the person what's already there (including which architecture `CLAUDE.md` currently records, if any), then ask explicitly what they want:
-1. **Skip** — project is already initialized, do nothing further
-2. **Re-run the same architecture** — re-applies the template to `core/`/`navigation/` per Step 4, and updates `CLAUDE.md` per the surgical (not whole-file) procedure in Step 5; warn that this may overwrite any hand-edited files under `core/` or `navigation/` before doing it. Step 7's Alignment Check always runs afterward.
-3. **Switch to a different architecture** — destructive; follow "Switching architecture" below exactly.
+If either exists, stop. Tell the person what is already there. Include the architecture that `CLAUDE.md` records now, if any. Then ask them clearly which option they want:
+1. **Skip** — the project is already initialized. Do nothing more.
+2. **Re-run the same architecture** — apply the template to `core/`/`navigation/` again, as in Step 4. Update `CLAUDE.md` with the surgical (not whole-file) procedure in Step 5. Before you do this, warn the person that it may overwrite hand-edited files under `core/` or `navigation/`. Step 7's Alignment Check always runs afterward.
+3. **Switch to a different architecture** — this is destructive. Follow "Switching architecture" below exactly.
 
-Regardless of which option is chosen, never touch anything under `feature/` — existing features are always preserved.
+Whichever option the person chooses, never touch anything under `feature/`. Existing features are always kept.
 
 ### Switching architecture
 
-Run these in order. If any step stops, nothing has been changed yet.
+Run these steps in order. If any step stops, nothing has changed yet.
 
-1. **Block if features exist.** List the folders under `feature/`, ignoring `.gitkeep`. If there are any, stop. Explain that they're built on the current pattern's base classes, so switching `core/` would break the build (Step 6 can't go green), and this command never edits `feature/`. The person's options are to keep the current architecture, or to remove or migrate those features themselves and run `/init-project` again. Never offer to migrate them as part of this command.
-2. **Ask which architecture** (Step 1), then read **both** templates fully: the old one (named in `CLAUDE.md`'s `## Architecture`) and the new one.
-3. **Build the change plan** from the two templates' Project Structure sections:
+1. **Block if features exist.** List the folders under `feature/`. Ignore `.gitkeep`. If there are any folders, stop and explain why:
+   - Those features use the current pattern's base classes. Switching `core/` would break the build (Step 6 can't go green).
+   - This command never edits `feature/`.
+
+   The person can keep the current architecture. Or they can remove or migrate those features themselves and run `/init-project` again. Never offer to migrate them as part of this command.
+2. **Ask which architecture** (Step 1). Then read **both** templates fully: the old one (named in `CLAUDE.md`'s `## Architecture`) and the new one.
+3. **Build the change plan** from the Project Structure sections of the two templates:
    - **Delete:** files under `core/` and `navigation/` that the old template lists and the new one doesn't (e.g. MVI-only base classes)
-   - **Replace:** files both templates list but with different contents (e.g. the base ViewModel, `MainActivity`, the error → snackbar converter in `AppSnackbar.kt`)
-   - **Add:** files only the new template lists
-   - **Keep, untouched:** files under `core/` or `navigation/` that neither template lists (added by hand). List them so the person knows they may no longer fit the new pattern, and let Step 7 flag them
-   - **Keep, untouched:** everything architecture-agnostic that is already in place: `project-setup.md` output (build types, signing, keep rules, splash, ktlint, CI), `core-utils.md` files, `core/ui/components/` (except the converter), `core/ui/theme/`, `docs/`, and any real `BASE_URL` values
-   - **Gradle:** dependencies the new template needs that are missing → add. Dependencies only the old one used → list them and ask whether to remove; never remove one silently
-4. **Show the plan and confirm.** Present the full plan as file lists, plus the `CLAUDE.md` changes from Step 5's "Switch" procedure. Proceed only after an explicit confirmation naming the switch, e.g. "yes, switch from MVI + Clean to MVVM". Anything else, including a plain "yes", means ask again.
-5. **Apply** the plan, then continue with Step 5 ("Switch"), Step 6 and Step 7.
+   - **Replace:** files that both templates list, but with different contents (e.g. the base ViewModel, `MainActivity`, the error → snackbar converter in `AppSnackbar.kt`)
+   - **Add:** files that only the new template lists
+   - **Keep, untouched:** files under `core/` or `navigation/` that neither template lists (someone added them by hand). List them, so the person knows they may no longer fit the new pattern. Let Step 7 flag them
+   - **Keep, untouched:** everything already in place that doesn't depend on the architecture: `project-setup.md` output (build types, signing, keep rules, splash, ktlint, CI), `core-utils.md` files, `core/ui/components/` (except the converter), `core/ui/theme/`, `docs/`, and any real `BASE_URL` values
+   - **Gradle:** if the new template needs dependencies that are missing, add them. For dependencies that only the old template used, list them and ask whether to remove them. Never remove one silently
+4. **Show the plan and confirm.** Show the full plan as file lists. Include the `CLAUDE.md` changes from Step 5's "Switch" procedure. Continue only after an explicit confirmation that names the switch, e.g. "yes, switch from MVI + Clean to MVVM". Any other answer, including a plain "yes", means you ask again.
+5. **Apply** the plan. Then continue with Step 5 ("Switch"), Step 6 and Step 7.
 
 ## Step 1 — Ask which architecture pattern
 
-Ask the user, in a single message with clear options, which pattern they want:
+Ask the user which pattern they want. Use a single message with clear options:
 
 1. MVVM — *outline only*
 2. MVVM + Clean Architecture — *outline only*
 3. MVI — *outline only*
 4. MVI + Clean Architecture — **fully supported (recommended)**
 
-"Outline only" templates list the structure, dependencies and base classes but not full file contents for every core file (a matching feature template exists for all four) — say this when presenting the options, so the person knows more will be inferred if they pick one.
+"Outline only" templates list the structure, dependencies and base classes. They don't give the full contents of every core file. (A matching feature template exists for all four.) Say this when you present the options, so the person knows that more will be inferred if they pick one.
 
-Wait for their answer. Do not proceed on a guess — if their answer is ambiguous, ask again.
+Wait for their answer. Do not continue on a guess. If their answer is unclear, ask again.
 
 ## Step 2 — Load the matching template
 
-Once they answer, read the matching file fully before doing anything else:
+When they answer, read the matching file fully before you do anything else:
 
 | Answer | Template |
 |---|---|
@@ -99,22 +111,27 @@ Once they answer, read the matching file fully before doing anything else:
 
 ## Step 3 — Apply the template's defaults
 
-Each template has a "## Defaults" section (base URL placeholder, local storage choice, JSON parser). Apply these directly — do not ask about any of them. Only deviate if the person's own request already specified a different value (e.g. they named a real base URL up front).
+Each template has a "## Defaults" section (base URL placeholder, local storage choice, JSON parser). Apply these directly. Do not ask about any of them. Use a different value only if the person's own request already gave one (e.g. they named a real base URL at the start).
 
 ## Step 4 — Generate the skeleton
 
 Follow the template's folder structure and file contents exactly.
 
-- Only create what the template lists. No feature folders, no business logic, no sample screens beyond the placeholder/blank screen the template asks for.
-- If Android Studio's default Compose theme exists (`ui/theme/` with `Color.kt`, `Type.kt`, `Theme.kt`), move its contents into `core/ui/theme/` per the template, rename the theme function to the template's `AppTheme` (if it isn't already), and delete the old `ui/theme/` and the default `Greeting` composable — never leave two themes side by side.
-- Every core/shared file must stay feature-agnostic — no imports of anything feature-specific.
-- Use the template's defaults from Step 3 to fill in the base URL placeholder, JSON parser, and local storage.
-- Regardless of architecture, create `core/ui/components/` from `.claude/templates/shared/ui-components.md` (every component, plus the converter for the chosen architecture), along with the Dimens tokens and string resources it lists.
-- Regardless of architecture, apply `.claude/templates/shared/project-setup.md` (environments, signing, R8 keep rules, splash screen, unit-test setup, ktlint, CI workflow) and create every file in `.claude/templates/shared/core-utils.md` (`Validator`, `InputLimits`, `DateTimeFormat`, `NavResult`).
-- Regardless of architecture, also create the reference docs from `.claude/templates/shared/reference-docs.md` at the repo root:
-  - `docs/api/README.md`, `docs/oq/README.md`, `docs/feedback/README.md` and `docs/CHANGELOG.md` — each from its starter content, copied verbatim
+- Create only what the template lists. No feature folders, no business logic, and no sample screens except the placeholder/blank screen the template asks for.
+- If Android Studio's default Compose theme exists (`ui/theme/` with `Color.kt`, `Type.kt`, `Theme.kt`):
+  - move its contents into `core/ui/theme/`, as the template shows
+  - rename the theme function to the template's `AppTheme` (if it isn't already)
+  - delete the old `ui/theme/` and the default `Greeting` composable
+
+  Never leave two themes side by side.
+- Every core/shared file must stay feature-agnostic. It must not import anything feature-specific.
+- Use the template's defaults from Step 3 for the base URL placeholder, JSON parser and local storage.
+- For every architecture, create `core/ui/components/` from `.claude/templates/shared/ui-components.md` (every component, plus the converter for the chosen architecture). Also add the Dimens tokens and string resources it lists.
+- For every architecture, apply `.claude/templates/shared/project-setup.md` (environments, signing, R8 keep rules, splash screen, unit-test setup, ktlint, CI workflow). Also create every file in `.claude/templates/shared/core-utils.md` (`Validator`, `InputLimits`, `DateTimeFormat`, `NavResult`).
+- For every architecture, also create the reference docs from `.claude/templates/shared/reference-docs.md` at the repo root:
+  - `docs/api/README.md`, `docs/oq/README.md`, `docs/feedback/README.md` and `docs/CHANGELOG.md` — create each one from its starter content, copied verbatim
   - `docs/ui/.gitkeep` — starts empty
-  - the `updateChangelog` Gradle task, added to the app module's `build.gradle.kts`
+  - the `updateChangelog` Gradle task — add it to the app module's `build.gradle.kts`
 
 ## Step 5 — Write / update CLAUDE.md at the project root
 
@@ -122,59 +139,61 @@ Follow the template's folder structure and file contents exactly.
 
 Create `CLAUDE.md` at the repo root with these sections, in this order:
 
-1. **`## Architecture`** — chosen pattern + full tech stack (from the template header)
-2. **`## Defaults`** — the template's full "Defaults" section, copied verbatim. Keeping these visible in `CLAUDE.md` is what lets a future session know these choices were deliberate and already fixed, instead of re-deriving or re-asking about them.
-3. **`## Project Structure`** — the template's full "Project Structure" section, copied verbatim, so a future session can see the shape of the codebase without re-reading the template file.
-4. **`## Constraints`** — the template's full "Constraints" section, copied verbatim. If the template has no `## Constraints` heading, stop and tell the person — never silently skip it.
-5. Copy `.claude/templates/shared/hard-rules.md` — its `Hard Rules — Never Violate`, `Do Not Touch` and `Security` blocks, verbatim, in that order — always, regardless of which architecture was chosen. These are session-standing rules for every future coding session on this project, not just this scaffold step.
-   Then, if the template has a **"## CLAUDE.md content for this architecture"** section, copy its `## Architecture Hard Rules` block verbatim right after them. If the section is missing, tell the person explicitly that the chosen template ships no architecture-specific rules (only the generic ones apply), rather than skipping it silently. Match headings exactly — never guess at a similarly-named section.
-6. Copy `.claude/templates/shared/coding-standards.md` in full (Code Style, Error Handling, Logging) — always, regardless of which architecture was chosen.
-7. Copy `.claude/templates/shared/git-workflow.md` in full (Commits, Pull Requests, Claude's own behavior) — always, regardless of which architecture was chosen.
-8. Copy `.claude/templates/shared/response-format.md` in full (Issue/Root Cause/Action Plan before changes, What/Why Changed/Issue Resolved after) — always, regardless of which architecture was chosen.
-9. Copy the `## Reference Docs` section of `.claude/templates/shared/reference-docs.md` — its doc list plus the `Trackers` and `File naming (best practice)` subsections — always, regardless of which architecture was chosen. The starter-content blocks and the Gradle task are for Step 4 only; never copy them into `CLAUDE.md`.
+1. **`## Architecture`** — the chosen pattern + the full tech stack (from the template header)
+2. **`## Defaults`** — the template's full "Defaults" section, copied verbatim. These must stay visible in `CLAUDE.md`. Then a future session knows that these choices were deliberate and are already fixed. It won't work them out again or ask about them again.
+3. **`## Project Structure`** — the template's full "Project Structure" section, copied verbatim. A future session can then see the shape of the codebase without reading the template file again.
+4. **`## Constraints`** — the template's full "Constraints" section, copied verbatim. If the template has no `## Constraints` heading, stop and tell the person. Never skip it silently.
+5. Copy `.claude/templates/shared/hard-rules.md`: its `Hard Rules — Never Violate`, `Do Not Touch` and `Security` blocks, verbatim, in that order. Always do this, whatever architecture was chosen. These rules apply to every future coding session on this project, not just to this scaffold step.
+   Then, if the template has a **"## CLAUDE.md content for this architecture"** section, copy its `## Architecture Hard Rules` block verbatim right after them. If that section is missing, don't skip it silently. Tell the person clearly that the chosen template has no architecture-specific rules, so only the generic ones apply. Match headings exactly. Never guess at a section with a similar name.
+6. Copy `.claude/templates/shared/coding-standards.md` in full (Code Style, Error Handling, Logging). Always do this, whatever architecture was chosen.
+7. Copy `.claude/templates/shared/git-workflow.md` in full (Commits, Pull Requests, Claude's own behavior). Always do this, whatever architecture was chosen.
+8. Copy `.claude/templates/shared/response-format.md` in full (Issue/Root Cause/Action Plan before changes, What/Why Changed/Issue Resolved after). Always do this, whatever architecture was chosen.
+9. Copy the `## Reference Docs` section of `.claude/templates/shared/reference-docs.md`: its doc list plus the `Trackers` and `File naming (best practice)` subsections. Always do this, whatever architecture was chosen. The starter-content blocks and the Gradle task are only for Step 4. Never copy them into `CLAUDE.md`.
 10. **`## Feature Generation`** — a pointer: "New features are added with the feature-generation command/skill, following the pattern already scaffolded under `feature/`."
 
 ### Re-run (`CLAUDE.md` already exists — "Re-run the same architecture" from Step 0)
 
-Do **not** regenerate the whole file and do **not** blindly overwrite section-by-section. A project's `CLAUDE.md` accumulates legitimate, deliberate customizations that aren't in the raw template (e.g. a documented legacy-code carve-out, a project-specific file-split convention, a moved file location) — a blind rewrite silently destroys those. Instead, split the sections into two groups and handle each differently:
+Do **not** regenerate the whole file. Do **not** blindly overwrite it section by section. Over time, a project's `CLAUDE.md` collects real, deliberate customizations that aren't in the raw template (e.g. a documented legacy-code carve-out, a project-specific file-split convention, a moved file location). A blind rewrite silently destroys them. Instead, split the sections into two groups and handle each group differently:
 
-**A. Verbatim sections** — meant to be an exact copy of the template/shared files, never project-specific: `Constraints`, `Hard Rules — Never Violate`, `Do Not Touch`, `Security`, `Architecture Hard Rules`, `Code Style`, `Error Handling`, `Logging`, `Commits`, `Pull Requests`, `Claude's own behavior`, `Response Format`, `Reference Docs`, `Feature Generation`.
-- Diff each section's current text against the template/shared-file's canonical text.
-- Identical → leave untouched.
+**A. Verbatim sections** — these must be an exact copy of the template/shared files. They are never project-specific: `Constraints`, `Hard Rules — Never Violate`, `Do Not Touch`, `Security`, `Architecture Hard Rules`, `Code Style`, `Error Handling`, `Logging`, `Commits`, `Pull Requests`, `Claude's own behavior`, `Response Format`, `Reference Docs`, `Feature Generation`.
+- Diff each section's current text against the canonical text in the template/shared file.
+- Identical → leave it untouched.
 - Missing entirely → add it verbatim.
-- Present but different → **do not silently overwrite**. Show the person the diff and ask whether to keep the project's edited version or reset it to the template's canonical text.
+- Present but different → **do not silently overwrite**. Show the person the diff. Ask whether to keep the project's edited version or reset it to the template's canonical text.
 
-**B. Project-state sections** — meant to reflect this project's actual current reality, not a static template copy: `Architecture`, `Defaults`, `Project Structure`.
-- Missing entirely → add from the template as a starting point.
-- Already present → do **not** blindly overwrite with the generic template text (this would revert a real `BASE_URL` back to the placeholder, or replace an already-customized file tree with the generic `featureX` skeleton). Leave these as-is; keeping them accurate is Step 7's job, not this step's.
+**B. Project-state sections** — these must describe this project as it really is now. They are not a static copy of the template: `Architecture`, `Defaults`, `Project Structure`.
+- Missing entirely → add it from the template as a starting point.
+- Already present → do **not** blindly overwrite it with the generic template text. That would turn a real `BASE_URL` back into the placeholder, or replace a customized file tree with the generic `featureX` skeleton. Leave these sections as they are. Keeping them accurate is Step 7's job, not this step's.
 
 ### Switch (`CLAUDE.md` exists — "Switch to a different architecture" from Step 0)
 
 The architecture-specific sections describe the old pattern, so they must change. Everything else follows the re-run rules above.
 
-- **Replace with the new template's text:** `Architecture` (pattern + tech stack), `Defaults`, `Project Structure`, `Constraints`, `Architecture Hard Rules`. If the new template has no `## Architecture Hard Rules`, remove the old block and tell the person — never leave the old pattern's rules in place.
-- **Carry over project-specific facts** from the old sections, but only those that still hold under the new pattern (e.g. a real base URL noted in `Defaults`, a documented legacy-code carve-out). List each one and ask before keeping it.
-- **Shared sections** (`Hard Rules — Never Violate`, `Do Not Touch`, `Security`, `Code Style`, `Error Handling`, `Logging`, `Commits`, `Pull Requests`, `Claude's own behavior`, `Response Format`, `Reference Docs`, `Feature Generation`) aren't architecture-specific: handle them exactly as in the re-run's group A.
-- These replacements were already shown in Step 0's switch plan and confirmed there. Don't ask again; just apply them.
+- **Replace with the new template's text:** `Architecture` (pattern + tech stack), `Defaults`, `Project Structure`, `Constraints`, `Architecture Hard Rules`. If the new template has no `## Architecture Hard Rules`, remove the old block and tell the person. Never leave the old pattern's rules in place.
+- **Carry over project-specific facts** from the old sections, but only facts that are still true under the new pattern (e.g. a real base URL noted in `Defaults`, a documented legacy-code carve-out). List each one and ask before you keep it.
+- **Shared sections** (`Hard Rules — Never Violate`, `Do Not Touch`, `Security`, `Code Style`, `Error Handling`, `Logging`, `Commits`, `Pull Requests`, `Claude's own behavior`, `Response Format`, `Reference Docs`, `Feature Generation`) don't depend on the architecture. Handle them exactly like group A in the re-run.
+- The person already saw and confirmed these replacements in Step 0's switch plan. Don't ask again. Just apply them.
 
-Regardless of first-run, re-run or switch, never touch anything under `feature/`, and never disturb unrelated content already in the file that falls outside the sections above.
+In every case (first run, re-run or switch), never touch anything under `feature/`. Never change unrelated content in the file that is outside the sections above.
 
 ## Step 6 — Verify
 
-- Run `./gradlew ktlintCheck testDebugUnitTest assembleDebug` and fix anything that fails before reporting — never report success without a green run.
-- Report back a short summary: architecture chosen, files created, and where CLAUDE.md now lives.
+- Run `./gradlew ktlintCheck testDebugUnitTest assembleDebug`. Fix anything that fails before you report. Never report success without a green run.
+- Report a short summary: the architecture chosen, the files created, and where CLAUDE.md is now.
 
 ## Step 7 — Alignment Check (runs after every scaffold or re-run)
 
-Compare the actual project against the chosen template's Project Structure, Marker Reference, and Dependency Direction sections, and report drift — this step never edits code, only reports.
+Compare the actual project with the chosen template's Project Structure, Marker Reference and Dependency Direction sections. Report any drift. This step never edits code. It only reports.
 
 Check at least:
-- Do `core/domain/Mapper.kt` and `core/network/NetworkResult.kt` (or equivalents) actually get used anywhere outside their own definition? (grep for each type name across the codebase — if the only match is the definition file itself, it's defined but unused)
+- Are `core/domain/Mapper.kt` and `core/network/NetworkResult.kt` (or equivalents) used anywhere outside their own definition? Grep for each type name across the codebase. If the only match is the definition file itself, the type is defined but unused.
 - Does `core/ui/theme/` have a spacing/sizing token file (e.g. `Dimens.kt`)?
-- Does `core/model/` exist if 2+ features share a model, or are features instead importing a shared model from somewhere ad hoc (a legacy package, a random feature's `data/model/`)?
-- Does each feature's `data/` and `domain/` follow the template's subfolder split (`data/{remote,local,mapper,repository}`, `domain/{model,repository,usecase}`), or is either flat?
-- Does every feature domain layer own its own model, or does it re-export a DTO/legacy model directly as if it were the domain model?
-- Does anything under `core/` import a feature-specific or legacy-only symbol (violates feature-agnostic)?
-- Is the component-placement Level 1/2/3 rule actually followed (anything duplicated across features that should have been promoted to `core/ui/components/`; anything feature-wide sitting inline in a single screen that should have been promoted to `feature/x/presentation/components/`)?
+- If 2+ features share a model, does `core/model/` exist? Or do features import a shared model from some ad hoc place instead (a legacy package, a random feature's `data/model/`)?
+- Does each feature's `data/` and `domain/` follow the template's subfolder split (`data/{remote,local,mapper,repository}`, `domain/{model,repository,usecase}`)? Or is either one flat?
+- Does every feature's domain layer own its own model? Or does it re-export a DTO/legacy model directly as if it were the domain model?
+- Does anything under `core/` import a feature-specific or legacy-only symbol? (This breaks the feature-agnostic rule.)
+- Is the component-placement Level 1/2/3 rule actually followed? Look for:
+  - anything duplicated across features that should have been promoted to `core/ui/components/`
+  - anything used across a whole feature that sits inline in a single screen and should have been promoted to `feature/x/presentation/components/`
 
-Report the result as a concrete, file-referenced list split into two groups — Matches and Deviations — the same shape as a manual architecture-compliance review. **Never auto-fix anything found here.** End by asking the person explicitly what they want to do next: fix specific items now, note them for a tracked follow-up, or leave as-is for this run.
+Report the result as a concrete list with file references. Split it into two groups: Matches and Deviations. Use the same shape as a manual architecture-compliance review. **Never auto-fix anything found here.** At the end, ask the person clearly what they want to do next: fix specific items now, note them for a tracked follow-up, or leave them as they are for this run.

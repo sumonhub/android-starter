@@ -2,7 +2,7 @@
 
 A reusable Claude Code kit for starting Android projects with a consistent, structured architecture.
 
-Copy one folder into a new Android Studio project, give Claude Code one instruction, and it scaffolds the shared foundation: Jetpack Compose, Koin DI, Retrofit networking, base ViewModel, theme, navigation shell and a project `CLAUDE.md` that keeps every later session on the same rules.
+Copy one folder into a new Android Studio project and give Claude Code one instruction. Claude Code then scaffolds the shared foundation: Jetpack Compose, Koin DI, Retrofit networking, base ViewModel, theme, navigation shell and a project `CLAUDE.md`. The `CLAUDE.md` keeps every later session on the same rules.
 
 ## How to use
 
@@ -10,7 +10,7 @@ Copy one folder into a new Android Studio project, give Claude Code one instruct
 2. Copy this repo's `.claude/` folder into the new project's root.
 3. Open Claude Code in that project and run `/init-project`.
 
-Claude asks which architecture you want and scaffolds the project. These slash commands are available:
+Claude asks which architecture you want. Then it scaffolds the project. You can use these slash commands:
 
 | Command | What it does |
 |---|---|
@@ -23,7 +23,7 @@ Claude asks which architecture you want and scaffolds the project. These slash c
 | Pattern | Status |
 |---|---|
 | MVI + Clean Architecture | Fully supported: complete scaffold template with full code |
-| MVI, MVVM, MVVM + Clean | Scaffold template is an outline (structure, dependencies, base classes) |
+| MVI, MVVM, MVVM + Clean | The scaffold template is an outline (structure, dependencies, base classes) |
 
 Every architecture has its own feature template for `/generate-feature`.
 
@@ -55,13 +55,13 @@ Whichever architecture you pick, every generated project also gets:
 | `docs/oq/` | Open-questions tracker: pending product and architecture decisions |
 | `docs/feedback/` | QA feedback tracker |
 
-Each tracker is a `README.md` with colored status icons (🔴 🟡 🟢 ⚪). It starts with a list, followed by one details section per item. Click an ID in the list to jump to its details, and click "Back to list" to return.
+Each tracker is a `README.md` with colored status icons (🔴 🟡 🟢 ⚪). It starts with a list. After the list comes one details section per item. Click an ID in the list to jump to its details. Click "Back to list" to go back.
 
 The Android code in this repo is Android Studio's Empty Activity (Jetpack Compose) template. It shows the starting point before `/init-project` runs.
 
 ## Requirements
 
 - Android Studio with AGP 9+
-- A Compose project (Empty Activity template) with Kotlin DSL, `gradle/libs.versions.toml`, Kotlin 2.0+ and JDK 17+. `/init-project` checks all of these first and explains how to fix anything that's missing. XML / View-based projects aren't supported.
+- A Compose project (Empty Activity template) with Kotlin DSL, `gradle/libs.versions.toml`, Kotlin 2.0+ and JDK 17+. `/init-project` checks all of these first. If anything is missing, it explains how to fix it. XML / View-based projects are not supported.
 - [Claude Code](https://claude.com/claude-code)
 - Optional: the Figma MCP server, for `/generate-screen` from Figma links

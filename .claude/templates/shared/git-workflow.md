@@ -1,15 +1,15 @@
 # Shared Git & PR Workflow (all architectures)
 
-> Applies regardless of which architecture pattern was chosen. `/init-project` writes this
-> into every project's `CLAUDE.md`, unmodified.
+> Applies to every project, whatever architecture pattern was chosen. `/init-project` copies this
+> into every project's `CLAUDE.md` without changes.
 
 ## Commits
-- Conventional commits: `feat:`, `fix:`, `refactor:`, `test:`, `chore:`, `docs:`
-- No direct commits to `main` / `develop` — always via a pull request
+- Use conventional commits: `feat:`, `fix:`, `refactor:`, `test:`, `chore:`, `docs:`
+- Never commit directly to `main` / `develop`. Always go through a pull request
 
 ## Pull Requests
-- PR description includes: what changed, why, screenshots (for any UI change), testing done
+- A PR description includes: what changed, why, screenshots (for any UI change), and the testing done
 
 ## Claude's own behavior
-- Drafting a commit message or PR description is fine at any time
-- Never push a commit, open a PR, merge, or force-push on the person's behalf without an explicit confirmation for that specific action — a general "commit this" instruction does not authorize pushing to a shared branch
+- You may draft a commit message or PR description at any time
+- Never push a commit, open a PR, merge, or force-push for the person unless they explicitly confirm that specific action. A general "commit this" instruction does not allow pushing to a shared branch
