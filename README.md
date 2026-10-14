@@ -62,5 +62,6 @@ The Android code in this repo is Android Studio's Empty Activity (Jetpack Compos
 ## Requirements
 
 - Android Studio with AGP 9+
+- A Compose project (Empty Activity template) with Kotlin DSL, `gradle/libs.versions.toml`, Kotlin 2.0+ and JDK 17+. `/init-project` checks all of these first and explains how to fix anything that's missing. XML / View-based projects aren't supported.
 - [Claude Code](https://claude.com/claude-code)
 - Optional: the Figma MCP server, for `/generate-screen` from Figma links

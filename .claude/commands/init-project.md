@@ -9,6 +9,39 @@ You are scaffolding a **new project's shared foundation**. No feature code — i
 ## Rules
 - When anything is unclear — ask before generating. This applies to every step below: the architecture choice, anything not covered by the template's defaults, and anything else that comes up mid-scaffold. Never guess and proceed.
 
+## Preflight — Check prerequisites (runs before Step 0)
+
+Before asking anything, check that the project can take the scaffold. Run every check below, then report them all at once. Don't stop at the first failure, so the person can fix everything in one pass.
+
+### Blockers: stop if any of these fail
+
+| Check | How to detect | How to fix (tell the person) |
+|---|---|---|
+| Gradle Kotlin DSL | `settings.gradle.kts` at the root and `build.gradle.kts` in the app module (not `.gradle` Groovy files) | Create a new project in Android Studio (Kotlin DSL is the default), or convert the build files to `.kts` |
+| Version catalog | `gradle/libs.versions.toml` exists | Android Studio → **Refactor → Migrate to Version Catalog**, or create a new project (it ships one) |
+| AGP 9+ | `agp` version in `libs.versions.toml` | Android Studio → **Tools → AGP Upgrade Assistant**, upgrade to 9.x |
+| Kotlin 2.0+ | `kotlin` version in `libs.versions.toml` (Compose needs the `org.jetbrains.kotlin.plugin.compose` plugin, which only exists from Kotlin 2.0) | Bump `kotlin` in `libs.versions.toml` to 2.x and sync |
+| Gradle wrapper + JDK 17+ | `gradlew` / `gradlew.bat` exist and `./gradlew --version` succeeds, showing JVM 17+ (Step 6 depends on it) | Android Studio → **Settings → Build, Execution, Deployment → Build Tools → Gradle → Gradle JDK**: pick 17+. Set `JAVA_HOME` to the same JDK for the terminal |
+| Not an XML / View-based UI | See "XML / View-based projects" below | See below |
+
+### Handled by the scaffold: report only, don't stop
+
+- **Compose not set up yet**: missing Compose BOM/material3, missing `kotlin-compose` plugin, or no `buildFeatures { compose = true }`. Step 4 adds all of these from the template's Gradle section. Say "will be added".
+- **minSdk below 26**: `java.time` in `core-utils.md` needs core library desugaring. Step 4 enables it. Say "desugaring will be enabled".
+
+### XML / View-based projects
+
+Treat the project as View-based if any of these exist: layout files under `res/layout/`, `setContentView(R.layout.…)`, `Fragment` subclasses, or `viewBinding`/`dataBinding = true`.
+
+Every template is Compose-only. Step 4 rewrites `MainActivity` to `setContent { AppTheme { AppNavGraph() } }`, and `/generate-screen` and `/generate-feature` only produce Compose. Running the scaffold on a View-based app would disconnect its existing screens from the entry point and leave two UI systems side by side. So:
+
+- **Untouched "Empty Views Activity" template**: the only View code is the default `MainActivity` + `activity_main.xml`, with nothing added by hand. Explain this and offer to convert it to Compose: replace `MainActivity` with the template's version, delete `activity_main.xml`, and let Step 4 add Compose. Proceed only after an explicit "yes, convert to Compose".
+- **Anything beyond that** (real XML screens, Fragments, bindings): stop. Explain that this kit doesn't support View-based or hybrid projects, and recommend creating a new project with Android Studio's **Empty Activity** (Compose) template, then porting the code into features with `/generate-feature`. Never scaffold on top of it.
+
+### Report format
+
+Show a single checklist: ✅ passes, ⚠️ handled by the scaffold, ❌ blocker, plus the fix for each ❌. If there's any ❌, stop here and ask the person to fix them and run `/init-project` again. Never fix a blocker yourself: they touch the build setup and `libs.versions.toml`, which are protected by the hard rules. If everything is ✅/⚠️, continue to Step 0.
+
 ## Step 0 — Check for an existing scaffold
 
 Before asking anything else, check whether this project has already been initialized:
