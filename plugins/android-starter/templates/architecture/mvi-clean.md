@@ -7,19 +7,27 @@
 - Image loading: Coil (coil-compose)
 - Async: Kotlin Coroutines + Flow
 - Navigation: Jetpack Navigation Compose (type-safe routes via kotlinx.serialization)
-- Local storage: DataStore (Preferences) — default, no Room in shared scaffold
+- Local storage: DataStore (Preferences). This is the default. The shared scaffold has no Room.
 ---
  
 ## Goal
-Set up the entire skeleton of a NEW project — core infra, theme, base MVI classes, domain-layer contracts, DI wiring, navigation shell — so that features can be dropped in afterward using the standard feature-generation pattern below. Do NOT create any feature yet. Only scaffold shared foundations.
+Set up the full skeleton of a NEW project. This includes:
+- core infra
+- theme
+- base MVI classes
+- domain-layer contracts
+- DI wiring
+- navigation shell
+
+Later, you add features with the standard feature-generation pattern below. Do NOT create any feature yet. Only scaffold the shared foundations.
  
 ---
  
 ## Defaults
-- Base URL: `BuildConfig.BASE_URL`, one placeholder per build type (debug / staging / release) with `// TODO` comments — see `.claude/templates/shared/project-setup.md`. `ApiConfig.kt` reads it, never declares a URL
-- Local storage: DataStore (Preferences) — no Room, no SQL in shared scaffold
+- Base URL: `BuildConfig.BASE_URL`. Use one placeholder per build type (debug / staging / release), each with a `// TODO` comment. See `templates/shared/project-setup.md`. `ApiConfig.kt` reads this value. It never declares a URL itself.
+- Local storage: DataStore (Preferences). The shared scaffold has no Room and no SQL.
 - JSON: Gson
-These are fixed defaults — do not ask about them. Only deviate if explicitly stated.
+These defaults are fixed. Do not ask about them. Change them only if the user says so explicitly.
  
 ---
  
@@ -27,15 +35,15 @@ These are fixed defaults — do not ask about them. Only deviate if explicitly s
  
 > **Claude Code instructions:**
 > - Follow this structure exactly when creating files and folders.
-> - Markers explained at bottom — read before creating any file.
+> - The markers are explained at the bottom. Read that part before you create any file.
 > - `domain/` must never import from `data/`, `presentation/`, or any Android framework class.
 > - `core/` must never import from any feature package.
-> - `NetworkResult` is confined to `data/` only — `domain/` and `presentation/` never reference it.
-> - Components placement rule (apply conditionally per `[LEVEL]` markers):
+> - Only `data/` may use `NetworkResult`. `domain/` and `presentation/` never reference it.
+> - Component placement rule (follow the `[LEVEL]` markers):
 >   - Used across **all features** → `core/ui/components/`
 >   - Used in **2+ screens within same feature** → `feature/featureX/presentation/components/`
 >   - Used in **only one screen** → `feature/featureX/presentation/screenY/components/`
-> - Start every new component at screen level. Move up only when reused.
+> - Start every new component at screen level. Move it up only when it is reused.
  
 ```
 app/src/main/java/com/example/app/
@@ -169,12 +177,12 @@ app/src/main/java/com/example/app/
  
 | Marker | Meaning |
 |---|---|
-| `[CONDITIONAL]` | Create only if actually needed — skip otherwise |
-| `[LEVEL 1]` | Global component — reused across all features |
-| `[LEVEL 2]` | Feature-wide component — reused across 2+ screens in same feature |
-| `[LEVEL 3]` | Screen-specific component — used in exactly one screen |
-| `[FEATURE TEMPLATE]` | Not created at scaffold time — shows the pattern for later feature generation |
-| `[CONDITIONAL cross-feature]` | Inject another feature's Repository into this UseCase only when genuinely needed |
+| `[CONDITIONAL]` | Create only if it is really needed. Otherwise skip it. |
+| `[LEVEL 1]` | Global component. Reused across all features. |
+| `[LEVEL 2]` | Feature-wide component. Reused across 2+ screens in the same feature. |
+| `[LEVEL 3]` | Screen-specific component. Used in exactly one screen. |
+| `[FEATURE TEMPLATE]` | Not created at scaffold time. Shows the pattern for generating features later. |
+| `[CONDITIONAL cross-feature]` | Inject another feature's Repository into this UseCase only when it is really needed. |
  
 ---
  
@@ -196,8 +204,8 @@ Used across all features?
    YES → core/ui/components/                                       [LEVEL 1]
 ```
  
-> **Rule:** Always start at LEVEL 3 (screen). Promote upward only when reuse appears — never move a component down.
-> In a single-screen feature (flat `presentation/`, no `screenName/` folder), LEVEL 3 components go in `presentation/components/`.
+> **Rule:** Always start at LEVEL 3 (screen). Move a component up only when it is reused. Never move a component down.
+> A single-screen feature has a flat `presentation/` and no `screenName/` folder. In that case, LEVEL 3 components go in `presentation/components/`.
  
 ---
  
@@ -211,7 +219,7 @@ feature/featureX/presentation  ──→  feature/featureX/domain  ←──  fe
                                    core/di/ + feature/di/ (binds everything)
 ```
  
-See **Constraints** below for the rules this diagram implies.
+The rules behind this diagram are in **Constraints** below.
 
 ---
 
@@ -220,26 +228,26 @@ See **Constraints** below for the rules this diagram implies.
 - `domain/` never imports `data/`, `presentation/`, or Android framework classes
 - `core/` never imports any feature package
 - `NetworkResult` never crosses above `RepositoryImpl`
-- `core/model/` used only when a model is genuinely shared across 2+ features
+- Use `core/model/` only when 2+ features really share a model
 ---
  
 ## Step-by-Step Scaffold Instructions
  
 ### Step 1: Gradle (`app/build.gradle.kts`)
 Add:
-- Compose BOM + ui, material3 (1.3+ — AppScreen uses `PullToRefreshBox`), material-icons-core, tooling-preview
+- Compose BOM + ui, material3, material-icons-core, tooling-preview. Use material3 1.3+, because AppScreen uses `PullToRefreshBox`.
 - Koin: koin-android, koin-androidx-compose
 - Retrofit: retrofit, converter-gson
 - OkHttp: okhttp, logging-interceptor
 - DataStore: androidx-datastore-preferences
-- Coil 3: coil-compose + coil-network-okhttp (without it Coil 3 cannot load images from a URL)
+- Coil 3: coil-compose + coil-network-okhttp. Without coil-network-okhttp, Coil 3 cannot load images from a URL.
 - Coroutines: kotlinx-coroutines-android
 - Navigation: navigation-compose (2.8+)
 - Serialization: kotlinx-serialization-json + `kotlin("plugin.serialization")` plugin
-- Lifecycle: lifecycle-viewmodel-compose, lifecycle-runtime-ktx, lifecycle-runtime-compose (`collectAsStateWithLifecycle()`)
-- Build features: `android { buildFeatures { compose = true; buildConfig = true } }` — `buildConfig` is off by default since AGP 8, and the network logging + snackbar "Details" button read `BuildConfig.DEBUG`
+- Lifecycle: lifecycle-viewmodel-compose, lifecycle-runtime-ktx, lifecycle-runtime-compose (for `collectAsStateWithLifecycle()`)
+- Build features: `android { buildFeatures { compose = true; buildConfig = true } }`. Since AGP 8, `buildConfig` is off by default. You need it because the network logging and the snackbar "Details" button read `BuildConfig.DEBUG`.
 ### Step 2: Create folder structure
-Exactly as shown above. `feature/` folder is empty at scaffold time — only `core/` and `navigation/` are populated.
+Create it exactly as shown above. The `feature/` folder is empty at scaffold time. Only `core/` and `navigation/` have files.
  
 ### Step 3: App.kt
 ```kotlin
@@ -255,11 +263,11 @@ startKoin {
 ### Step 4: Network layer (`core/network/` + `NetworkModule.kt`)
 
 **Rules**
-- One OkHttpClient + one Retrofit for the whole app, built in `NetworkClient` and provided as `single`s by `NetworkModule`
-- Features use `get<Retrofit>().create(FeatureXApiService::class.java)` — never build their own Retrofit/OkHttp
-- Only `RepositoryImpl` touches Retrofit, and only through `safeApiCall` / `safeUnitApiCall` — never a hand-written `try/catch` around an API call. `.toResult()` turns the `NetworkResult` into the domain `Result` before it leaves the repository
-- The logging interceptor is added **only** `if (BuildConfig.DEBUG)` — never commented out "temporarily" — and it masks passwords / OTPs / PINs / tokens in bodies even in debug
-- **Never slow down the network layer on purpose** (`Thread.sleep`, `delay`, a "minimum duration" interceptor). If a loader flashes too briefly, that's a UI concern — `rememberMinimumLoading` in `AppScreen` (Step 8) handles it without delaying the data
+- The whole app has one OkHttpClient and one Retrofit. `NetworkClient` builds them. `NetworkModule` provides them as `single`s.
+- Features use `get<Retrofit>().create(FeatureXApiService::class.java)`. They never build their own Retrofit/OkHttp.
+- Only `RepositoryImpl` touches Retrofit, and only through `safeApiCall` / `safeUnitApiCall`. Never write a `try/catch` by hand around an API call. `.toResult()` turns the `NetworkResult` into the domain `Result` before it leaves the repository.
+- Add the logging interceptor **only** `if (BuildConfig.DEBUG)`. Never comment it out "temporarily". It masks passwords / OTPs / PINs / tokens in bodies, even in debug.
+- **Never slow down the network layer on purpose.** For example: `Thread.sleep`, `delay`, or a "minimum duration" interceptor. If a loader shows for too short a time, that is a UI problem. `rememberMinimumLoading` in `AppScreen` (Step 8) handles it without delaying the data.
 
 **`ApiConfig.kt`**
 ```kotlin
@@ -271,7 +279,7 @@ object ApiConfig {
 }
 ```
 
-**`ApiResponse.kt`** — the backend's response envelope. **Adjust to your backend's real shape** (ask if unknown — never guess):
+**`ApiResponse.kt`** is the backend's response envelope. **Change it to match your backend's real shape.** If you do not know the shape, ask. Never guess.
 ```kotlin
 data class ApiResponse<T>(
     val success: Boolean = false,
@@ -281,7 +289,7 @@ data class ApiResponse<T>(
 )
 ```
 
-**`AuthTokenProvider.kt`** — synchronous token holder (OkHttp interceptors can't suspend on DataStore). Kept in sync by the feature that owns the session, so `core/network` never imports a feature:
+**`AuthTokenProvider.kt`** holds the token synchronously, because OkHttp interceptors can't suspend on DataStore. The feature that owns the session keeps it up to date. This way `core/network` never imports a feature.
 ```kotlin
 class AuthTokenProvider {
     @Volatile
@@ -303,7 +311,7 @@ class AuthTokenProvider {
     }
 }
 ```
-`CurrentUserProvider` (`@Volatile var userId: String?`) — [CONDITIONAL] same pattern, add only when a feature needs the signed-in user's id without depending on the auth feature.
+`CurrentUserProvider` (`@Volatile var userId: String?`) is [CONDITIONAL]. It uses the same pattern. Add it only when a feature needs the signed-in user's id without depending on the auth feature.
 
 **`NetworkClient.kt`**
 ```kotlin
@@ -387,9 +395,9 @@ val networkModule = module {
     single { NetworkClient.createRetrofit(get()) }
 }
 ```
-`App.kt` hydrates `AuthTokenProvider.token` from DataStore at startup; `MainActivity` collects `sessionExpired` → navigates to sign-in → `consumeSessionExpired()`.
+At startup, `App.kt` loads `AuthTokenProvider.token` from DataStore. `MainActivity` collects `sessionExpired` → navigates to sign-in → calls `consumeSessionExpired()`.
 
-**`SafeApiCall.kt`** — the **only** place a Retrofit `Response` becomes a `NetworkResult`, so every feature maps errors identically (import `kotlin.coroutines.cancellation.CancellationException`):
+**`SafeApiCall.kt`** is the **only** place where a Retrofit `Response` becomes a `NetworkResult`. This way every feature maps errors the same way. Import `kotlin.coroutines.cancellation.CancellationException`.
 ```kotlin
 @PublishedApi
 internal val envelopeGson = Gson()
@@ -459,7 +467,7 @@ internal fun <T> Response<ApiResponse<T>>.toFailure(): Failure {
 }
 ```
 
-**RepositoryImpl usage — the shape every feature follows:**
+**RepositoryImpl usage — every feature follows this shape:**
 ```kotlin
 class OrderRepositoryImpl(
     private val api: OrderApiService,
@@ -474,12 +482,12 @@ class OrderRepositoryImpl(
 ```
 
 ### Step 5: LocalStorageModule.kt
-- Single `DataStore<Preferences>` via `preferencesDataStore(name = "app_prefs")`
-- Features inject `get<DataStore<Preferences>>()` — never create their own instance
-- **Sensitive data** (auth token, user session, anything PII) → **always** this DataStore — never `SharedPreferences`
-- **Non-sensitive data** (e.g. app language, theme flag, "onboarding seen") → `SharedPreferences` is allowed, especially when it must be read synchronously before Koin/DataStore are ready (e.g. locale in `attachBaseContext`)
-  - Keep it behind one small `core/util` helper (e.g. `LocaleManager`) with a named key constant — never call `getSharedPreferences` / `PreferenceManager` from a Composable or feature code directly
-  - If in doubt whether a value is sensitive, treat it as sensitive and use DataStore
+- Create one `DataStore<Preferences>` with `preferencesDataStore(name = "app_prefs")`
+- Features inject `get<DataStore<Preferences>>()`. They never create their own instance.
+- **Sensitive data** (auth token, user session, anything PII) → **always** this DataStore. Never `SharedPreferences`.
+- **Non-sensitive data** (e.g. app language, theme flag, "onboarding seen") → `SharedPreferences` is allowed. This is useful when the value must be read synchronously before Koin/DataStore are ready (e.g. locale in `attachBaseContext`).
+  - Put it behind one small `core/util` helper (e.g. `LocaleManager`) with a named key constant. Never call `getSharedPreferences` / `PreferenceManager` directly from a Composable or from feature code.
+  - If you are not sure whether a value is sensitive, treat it as sensitive and use DataStore.
 ### Step 5b: DispatcherModule.kt
 ```kotlin
 val dispatcherModule = module {
@@ -488,12 +496,12 @@ val dispatcherModule = module {
     single(named("default")) { Dispatchers.Default }
 }
 ```
-- This is the **only** file in the app allowed to reference `Dispatchers.*`
-- Every class that switches threads takes a `CoroutineDispatcher` constructor param and Koin passes the named one — UseCases (`factory { GetFeatureXUseCase(get(), get(named("io"))) }`) **and** non-UseCase helpers too (e.g. a `core/util/LocationProvider` doing `withContext(ioDispatcher) { ... }`)
-- Never write `withContext(Dispatchers.IO)` / `launch(Dispatchers.Default)` inline — it can't be swapped for a test dispatcher
+- This is the **only** file in the app that may reference `Dispatchers.*`
+- Every class that switches threads takes a `CoroutineDispatcher` constructor param. Koin passes the named one. This applies to UseCases (`factory { GetFeatureXUseCase(get(), get(named("io"))) }`) **and** to non-UseCase helpers too (e.g. a `core/util/LocationProvider` doing `withContext(ioDispatcher) { ... }`).
+- Never write `withContext(Dispatchers.IO)` / `launch(Dispatchers.Default)` inline. Tests can't swap it for a test dispatcher.
 ### Step 6: Domain contracts
  
-**`Failure.kt`** — pure Kotlin, no UI or string resources (the user-facing `Failure.toMessage()` lives in `AppSnackbar.kt`, see Step 8):
+**`Failure.kt`** is pure Kotlin, with no UI or string resources. The user-facing `Failure.toMessage()` lives in `AppSnackbar.kt` (see Step 8).
 ```kotlin
 sealed class Failure {
     data object NoInternet : Failure()
@@ -519,7 +527,7 @@ sealed class NetworkResult<out T> {
     data class Error(val failure: Failure) : NetworkResult<Nothing>()
 }
 ```
-No `Loading` case — a network call is either done or failed; "loading" is UI state and lives in `UiStatus.isLoading`.
+There is no `Loading` case. A network call either succeeds or fails. "Loading" is UI state, and it lives in `UiStatus.isLoading`.
 
 **`Result.kt`**
 ```kotlin
@@ -554,14 +562,14 @@ interface Mapper<in I, out O> {
  
 ### Step 7: MVI markers + UiStatus + BaseViewModel.kt
 
-**Markers** — plain `interface`, never `sealed` (Kotlin only lets a sealed type be implemented inside its own package, so a sealed core marker could never be implemented by `feature/*`):
+**Markers** are plain `interface`s, never `sealed`. Kotlin only lets code in the same package implement a sealed type. So `feature/*` could never implement a sealed core marker.
 ```kotlin
 interface MviState
 interface MviIntent
 interface MviEffect
 ```
 
-**`UiStatus.kt`** — the shared loading/error slice every screen State carries and hands to `AppScreen`:
+**`UiStatus.kt`** is the shared loading/error part of the State. Every screen State carries it and passes it to `AppScreen`.
 ```kotlin
 data class UiStatus(
     val isLoading: Boolean = false,
@@ -569,7 +577,11 @@ data class UiStatus(
     val failure: Failure? = null,
 )
 ```
-A `Result.Error(failure)` from a UseCase and an unexpected exception caught by `launchSafely` (`Failure.Unknown(throwable)`) both land here — one error shape for every screen.
+Two kinds of errors end up here:
+- a `Result.Error(failure)` from a UseCase
+- an unexpected exception caught by `launchSafely` (as `Failure.Unknown(throwable)`)
+
+So every screen has one error shape.
 
 **`BaseViewModel.kt`**
 ```kotlin
@@ -612,7 +624,7 @@ abstract class BaseViewModel<S : MviState, I : MviIntent, E : MviEffect>(
 }
 ```
 
-**Feature usage — the shape every screen follows (`ScreenNameContract.kt` + ViewModel + Screen):**
+**Feature usage — every screen follows this shape (`ScreenNameContract.kt` + ViewModel + Screen):**
 ```kotlin
 // Contract — all three in one file
 data class OrderListState(
@@ -651,13 +663,28 @@ LaunchedEffect(Unit) {
  
 ### Step 8: UI components (`core/ui/components/`)
 
-Create every component in `.claude/templates/shared/ui-components.md` exactly as written there — `AppScreen`, `AppSnackbar`, `AppTopBar`, `AppButton`, `AppChip`, `Avatar`, `LoadingIndicator`, `ErrorView`, `EmptyView` — plus its **MVI + Clean** converter (`UiStatus.toErrorMessage()`, `Failure?.toErrorMessage()`, `Failure.toMessage()`) in `AppSnackbar.kt`. That file also lists the Dimens tokens and string resources the components need.
+Create every component in `templates/shared/ui-components.md`, exactly as written there:
+- `AppScreen`, `AppSnackbar`, `AppTopBar`, `AppButton`, `AppChip`, `Avatar`, `LoadingIndicator`, `ErrorView`, `EmptyView`
+- the **MVI + Clean** converter in `AppSnackbar.kt`: `UiStatus.toErrorMessage()`, `Failure?.toErrorMessage()`, `Failure.toMessage()`
 
-Screens pass `state.status.isLoading` to `LoadingState` and `state.status.toErrorMessage(onRetry = { viewModel.processIntent(XIntent.Retry) }, onDismiss = { viewModel.processIntent(XIntent.ErrorDismissed) })` to `snackbarMessage`, per the shared file's "Screen usage" example.
+That file also lists the Dimens tokens and string resources the components need.
+
+Screens follow the shared file's "Screen usage" example:
+- pass `state.status.isLoading` to `LoadingState`
+- pass `state.status.toErrorMessage(onRetry = { viewModel.processIntent(XIntent.Retry) }, onDismiss = { viewModel.processIntent(XIntent.ErrorDismissed) })` to `snackbarMessage`
 
 ### Step 9: Project setup + core utilities
 
-Apply `.claude/templates/shared/project-setup.md` in full — environments (debug/staging/release `BASE_URL`), release signing from `keystore.properties`, R8 keep rules for DTOs, splash screen, unit-test setup (`MainDispatcherRule`), ktlint + `.editorconfig`, and the GitHub Actions workflow. Then create every file in `.claude/templates/shared/core-utils.md` — `core/util/Validator.kt`, `InputLimits.kt`, `DateTimeFormat.kt` and `navigation/NavResult.kt`.
+Apply all of `templates/shared/project-setup.md`:
+- environments (debug/staging/release `BASE_URL`)
+- release signing from `keystore.properties`
+- R8 keep rules for DTOs
+- splash screen
+- unit-test setup (`MainDispatcherRule`)
+- ktlint + `.editorconfig`
+- the GitHub Actions workflow
+
+Then create every file in `templates/shared/core-utils.md`: `core/util/Validator.kt`, `InputLimits.kt`, `DateTimeFormat.kt` and `navigation/NavResult.kt`.
 
 ### Step 10: Navigation shell
  
@@ -679,11 +706,11 @@ NavHost(navController, startDestination = Routes.Home) {
 ```
  
 ### Step 11: Verify
-- `./gradlew ktlintCheck testDebugUnitTest assembleDebug` passes, and the app launches showing the system splash screen first
-- Project builds with zero features present
-- App launches to blank themed screen → proves Koin + Theme + NavGraph are wired
-- `core/domain/UseCase.kt` compiles with no feature imports
-- `AppScreen.kt` compiles with all its params; its loading and Info-snackbar `@Preview`s render; the placeholder Home screen composes its body inside it
+- `./gradlew ktlintCheck testDebugUnitTest assembleDebug` passes. The app launches and shows the system splash screen first.
+- The project builds with zero features.
+- The app launches to a blank themed screen. This proves Koin + Theme + NavGraph are wired.
+- `core/domain/UseCase.kt` compiles with no feature imports.
+- `AppScreen.kt` compiles with all its params. Its loading and Info-snackbar `@Preview`s render. The placeholder Home screen composes its body inside it.
 ---
  
 ## Cross-Feature Data Sharing
@@ -716,26 +743,31 @@ modules(coreModules + listOf(
  
 ## CLAUDE.md content for this architecture
 
-> The generic rules (`Hard Rules — Never Violate`, `Do Not Touch`, `Security`) live in `.claude/templates/shared/hard-rules.md` and apply to this architecture too — they are not repeated here.
-> `/init-project` Step 5 copies the `## Architecture Hard Rules` block below into the project's `CLAUDE.md` verbatim, right after those generic blocks. Keep exactly this one `##` block here — anything outside it is not copied.
+> The generic rules (`Hard Rules — Never Violate`, `Do Not Touch`, `Security`) live in `templates/shared/hard-rules.md`. They apply to this architecture too. They are not repeated here.
+> `/android-starter:init-project` Step 5 copies the `## Architecture Hard Rules` block below into the project's `CLAUDE.md` word for word, right after those generic blocks. Keep exactly this one `##` block here. Anything outside it is not copied.
 
 ```markdown
 ## Architecture Hard Rules
 
 > MVI + Clean Architecture. These add to the generic Hard Rules above.
 
-- **Repositories call the API only through `safeApiCall` / `safeUnitApiCall` + `.toResult()`** — never a hand-written `try/catch` or `response.isSuccessful` check in a RepositoryImpl
-- **Never call Repository directly from ViewModel** — always through a UseCase
-- **Never add Android/Retrofit/Room imports in `domain/`** — pure Kotlin only
-- **Never use `NetworkResult` above `RepositoryImpl`** — domain and presentation see only `Result<T>` and `Failure`
-- **UseCase**: one class per operation, extends `core/domain/UseCase.kt`, always `operator fun invoke()`; inject its dispatcher, never hardcode one
-- **Never use raw try/catch in ViewModel** — UseCase returns `Result<T>`; ViewModel maps via `setState`
-- **ViewModel side-effects**: always go through `launchSafely`, never raw `viewModelScope.launch`
-- **Never use `sealed class` for a feature's Effect or Intent** — always `sealed interface XEffect : MviEffect` / `sealed interface XIntent : MviIntent`. The core `MviEffect`/`MviIntent`/`MviState` markers stay plain `interface`
+- **Repositories call the API only through `safeApiCall` / `safeUnitApiCall` + `.toResult()`**. Never write a `try/catch` or a `response.isSuccessful` check by hand in a RepositoryImpl.
+- **Never call Repository directly from ViewModel**. Always go through a UseCase.
+- **Never add Android/Retrofit/Room imports in `domain/`**. It is pure Kotlin only.
+- **Never use `NetworkResult` above `RepositoryImpl`**. Domain and presentation see only `Result<T>` and `Failure`.
+- **UseCase**: one class per operation. It extends `core/domain/UseCase.kt` and always uses `operator fun invoke()`. Inject its dispatcher. Never hardcode one.
+- **Never use raw try/catch in ViewModel**. The UseCase returns `Result<T>`, and the ViewModel maps it with `setState`.
+- **ViewModel side-effects**: always go through `launchSafely`. Never use raw `viewModelScope.launch`.
+- **Never use `sealed class` for a feature's Effect or Intent**. Always use `sealed interface XEffect : MviEffect` / `sealed interface XIntent : MviIntent`. The core `MviEffect`/`MviIntent`/`MviState` markers stay plain `interface`.
 - **MVI contract rules:**
-  - **State** — one immutable `data class XState : MviState` per screen, only `val` + immutable collections (`List`, never `MutableList`/`var`); carries `status: UiStatus` (`isLoading` + `failure: Failure?`) for loading/error. Changed **only** via `setState { copy(...) }`
-  - **Intent** — `sealed interface XIntent : MviIntent`; the Screen talks to the ViewModel **only** via `viewModel.processIntent(...)` — never by calling other public VM functions or mutating VM fields
-  - **Effect** — `sealed interface XEffect : MviEffect`, **one-shot events only** (navigate, toast, close sheet, open picker). Anything the screen must still show after rotation belongs in State, never in an Effect; and a one-shot event never goes in State as a flag
-  - **Screen** collects `state` with `collectAsStateWithLifecycle()` and `effect` inside `LaunchedEffect(Unit) { viewModel.effect.collect { ... } }` — never collects `effect` anywhere else
-  - **`handleError` override is mandatory** in every feature ViewModel: `setState { copy(status = UiStatus(failure = Failure.Unknown(throwable))) }` (also clears loading) — the base no-op would swallow the error silently
+  - **State**: one immutable `data class XState : MviState` per screen.
+    - Use only `val` and immutable collections (`List`, never `MutableList`/`var`).
+    - It carries `status: UiStatus` (`isLoading` + `failure: Failure?`) for loading/error.
+    - Change it **only** with `setState { copy(...) }`.
+  - **Intent**: `sealed interface XIntent : MviIntent`. The Screen talks to the ViewModel **only** through `viewModel.processIntent(...)`. It never calls other public VM functions and never changes VM fields.
+  - **Effect**: `sealed interface XEffect : MviEffect`, for **one-shot events only** (navigate, toast, close sheet, open picker).
+    - Anything the screen must still show after rotation belongs in State, never in an Effect.
+    - A one-shot event never goes in State as a flag.
+  - **Screen** collects `state` with `collectAsStateWithLifecycle()`. It collects `effect` inside `LaunchedEffect(Unit) { viewModel.effect.collect { ... } }`, and never anywhere else.
+  - **`handleError` override is mandatory** in every feature ViewModel: `setState { copy(status = UiStatus(failure = Failure.Unknown(throwable))) }`. This also clears loading. Without the override, the base no-op would silently swallow the error.
 ```

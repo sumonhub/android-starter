@@ -1,37 +1,41 @@
 # Shared Reference Docs (all architectures)
 
-> Applies regardless of which architecture pattern was chosen. `/init-project` writes the `## Reference Docs`
-> section below (with its subsections) into every project's `CLAUDE.md`, and creates the matching folders and
-> starter files from the starter-content blocks further down (those blocks are never copied into `CLAUDE.md`).
+> Applies to every project, whatever architecture pattern was chosen. `/android-starter:init-project` copies the `## Reference Docs`
+> section below (with its subsections) into every project's `CLAUDE.md`. It also creates the matching folders and
+> starter files from the starter-content blocks further down. Those blocks are never copied into `CLAUDE.md`.
 
 ## Reference Docs
-- `docs/api/` — API tracker (`README.md`: every endpoint the app uses, its integration status, and backend issues) + raw backend API docs beside it
-- `docs/ui/` — UI references: design screenshots / exported frames / Figma links, one subfolder per feature (`docs/ui/<feature>/`)
-- `docs/oq/` — open-questions tracker (`README.md`): pending product/architecture decisions with context, options and trade-offs. Check here before implementing anything it covers
-- `docs/feedback/` — QA feedback tracker (`README.md`) + any screenshots QA attaches
-- `docs/CHANGELOG.md` — per-build change log for QA; cut a release with `./gradlew updateChangelog` (renames `[Unreleased]` to the current `versionName` + date)
+- `docs/api/` — API tracker (`README.md`: every endpoint the app uses, its integration status, and backend issues). The raw backend API docs sit beside it
+- `docs/ui/` — UI references: design screenshots / exported frames / Figma links. One subfolder per feature (`docs/ui/<feature>/`)
+- `docs/oq/` — open-questions tracker (`README.md`): pending product/architecture decisions with context, options and trade-offs. Check here before you build anything it covers
+- `docs/feedback/` — QA feedback tracker (`README.md`), plus any screenshots QA attaches
+- `docs/CHANGELOG.md` — change log for QA, per build. Cut a release with `./gradlew updateChangelog`. It renames `[Unreleased]` to the current `versionName` + date
 
 ### Trackers (`docs/api/`, `docs/oq/`, `docs/feedback/`)
-Each tracker's `README.md` has the same shape: legend + summary counts, then the **list** (one table row per item), then the **details** (one section per item).
-- **Two-way links:** every list row's ID links down to its details (`[OQ-3](#oq-3)`); every details section starts with `<a id="oq-3"></a>` and ends with `[↑ Back to list](#list)`.
-- **Status:** use only that file's legend emoji. When a status changes, update the list row, the details section and the summary counts together.
-- **IDs:** `API-n`, `OQ-n`, `FB-n` — sequential, never reused. Append new items at the end of both the list and the details.
-- **When to write:** do not just answer in chat —
-  - new endpoint shared, endpoint integrated, or "log this for backend" / "add an API issue" → `docs/api/README.md` (backend problems get 🔴 `Blocked` and the issue in the details)
+Each tracker's `README.md` has the same shape, in this order:
+1. Legend and summary counts
+2. The **list** (one table row per item)
+3. The **details** (one section per item)
+
+- **Two-way links:** the ID in every list row links down to its details (`[OQ-3](#oq-3)`). Every details section starts with `<a id="oq-3"></a>` and ends with `[↑ Back to list](#list)`.
+- **Status:** use only the emoji from that file's legend. When a status changes, update the list row, the details section and the summary counts together.
+- **IDs:** `API-n`, `OQ-n`, `FB-n`. They are sequential and never reused. Add new items at the end of both the list and the details.
+- **When to write:** do not just answer in chat. Write to the tracker:
+  - new endpoint shared, endpoint integrated, or "log this for backend" / "add an API issue" → `docs/api/README.md`. Backend problems get 🔴 `Blocked`, and the issue goes in the details
   - "park this question" / "add an open question" → `docs/oq/README.md`
   - QA feedback given → `docs/feedback/README.md`, one item per distinct problem
-- Each entry is specific: name the exact screen / feature / endpoint so the reader can act without a follow-up question. If unclear which tracker or feature an item belongs to, ask rather than guessing.
+- Make each entry specific. Name the exact screen / feature / endpoint, so the reader can act without asking a follow-up question. If it is unclear which tracker or feature an item belongs to, ask. Do not guess.
 
 ### File naming (best practice)
 - **Folders** — lowercase, one word or kebab-case: `api/`, `ui/`, `oq/`, `feedback/`, `ui/work-dashboard/`
-- **Trackers** — `README.md` inside each tracker folder, so GitHub shows it when the folder is opened
+- **Trackers** — `README.md` inside each tracker folder, so GitHub shows it when someone opens the folder
 - **Top-level living docs** — `UPPER_SNAKE_CASE.md` (`CHANGELOG.md`)
-- **Files inside folders** — lowercase `snake_case`, named by subject, not by date or person:
-  - `docs/api/<area>_api_reference.md` (+ the raw `<area>_api_reference.json` beside it when the backend shares one), e.g. `work_api_reference.md`
-  - `docs/ui/<feature>/<screen>.png|jpg`, e.g. `docs/ui/rating/rating_details.jpg`; numbered variants as `dashboard_1.jpg`, `dashboard_2.jpg`
+- **Files inside folders** — lowercase `snake_case`. Name them by subject, not by date or person:
+  - `docs/api/<area>_api_reference.md`, e.g. `work_api_reference.md`. When the backend shares a raw `<area>_api_reference.json`, put it beside that file
+  - `docs/ui/<feature>/<screen>.png|jpg`, e.g. `docs/ui/rating/rating_details.jpg`. Name numbered variants `dashboard_1.jpg`, `dashboard_2.jpg`
   - `docs/feedback/<id>_<topic>.png|jpg` for QA attachments, e.g. `fb_3_login_crash.png`
-- Never spaces, uppercase letters or version suffixes like `_final` / `_v2` / `(1)` in a file name — overwrite and let git keep history
-- Never commit real tokens, passwords or internal server paths — strip them from shared API docs / Postman exports first
+- Never use spaces, uppercase letters or version suffixes like `_final` / `_v2` / `(1)` in a file name. Overwrite the file and let git keep the history
+- Never commit real tokens, passwords or internal server paths. Remove them from shared API docs / Postman exports first
 
 ### `docs/api/README.md` starter content
 
@@ -154,7 +158,7 @@ Each tracker's `README.md` has the same shape: legend + summary counts, then the
 
 ### `updateChangelog` Gradle task
 
-Add to the app module's `build.gradle.kts`, after the `dependencies {}` block:
+Add this to the app module's `build.gradle.kts`, after the `dependencies {}` block:
 
 ```kotlin
 // Renames docs/CHANGELOG.md's [Unreleased] section to the current versionName + date, and opens
