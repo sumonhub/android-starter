@@ -1,7 +1,7 @@
 # Shared Coding Standards (all architectures)
 
 > Applies to every project, whatever architecture pattern was chosen (MVI, MVI+Clean, MVVM,
-> MVVM+Clean). `/init-project` copies this into every project's `CLAUDE.md` without changes.
+> MVVM+Clean). `/android-starter:init-project` copies this into every project's `CLAUDE.md` without changes.
 > It goes right after the Hard Rules (`shared/hard-rules.md` + the architecture's own).
 
 ## Code Style

@@ -1,6 +1,6 @@
 # Shared Core Utilities (all architectures)
 
-> Applies to every project, whatever architecture pattern was chosen. `/init-project` creates every file below. The usage
+> Applies to every project, whatever architecture pattern was chosen. `/android-starter:init-project` creates every file below. The usage
 > rules live in `shared/hard-rules.md`, so they reach every project's `CLAUDE.md`. All of these files are pure Kotlin except
 > `NavResult.kt`. This means a Clean domain layer may also use `Validator` and `InputLimits`.
 

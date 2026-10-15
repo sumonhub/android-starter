@@ -1,8 +1,11 @@
 ---
 description: Bootstrap a brand-new project's shared architecture foundation (infra only, no feature code)
+disable-model-invocation: true
 ---
 
-# /init-project
+# /android-starter:init-project
+
+> **Plugin files:** this skill's templates live in `${CLAUDE_PLUGIN_ROOT}/templates/`. When a template mentions a path that starts with `templates/`, it means `${CLAUDE_PLUGIN_ROOT}/templates/`.
 
 You are scaffolding a **new project's shared foundation**. Do not write feature code. Create only infra, DI, theme, base classes and the nav shell.
 
@@ -33,7 +36,7 @@ Before you ask anything, check that the project is ready for the scaffold. Run e
 
 Treat the project as View-based if any of these exist: layout files under `res/layout/`, `setContentView(R.layout.…)`, `Fragment` subclasses, or `viewBinding`/`dataBinding = true`.
 
-Every template is Compose-only. Step 4 rewrites `MainActivity` to `setContent { AppTheme { AppNavGraph() } }`. `/generate-screen` and `/generate-feature` only produce Compose. If you run the scaffold on a View-based app, its existing screens lose their connection to the entry point. The app also ends up with two UI systems side by side. So:
+Every template is Compose-only. Step 4 rewrites `MainActivity` to `setContent { AppTheme { AppNavGraph() } }`. `/android-starter:generate-screen` and `/android-starter:generate-feature` only produce Compose. If you run the scaffold on a View-based app, its existing screens lose their connection to the entry point. The app also ends up with two UI systems side by side. So:
 
 - **Untouched "Empty Views Activity" template**: the only View code is the default `MainActivity` + `activity_main.xml`, and nobody added anything by hand. Explain this and offer to convert it to Compose:
   - replace `MainActivity` with the template's version
@@ -41,12 +44,12 @@ Every template is Compose-only. Step 4 rewrites `MainActivity` to `setContent { 
   - let Step 4 add Compose
 
   Continue only after an explicit "yes, convert to Compose".
-- **Anything beyond that** (real XML screens, Fragments, bindings): stop. Explain that this kit doesn't support View-based or hybrid projects. Recommend that the person creates a new project with Android Studio's **Empty Activity** (Compose) template, then ports the code into features with `/generate-feature`. Never scaffold on top of it.
+- **Anything beyond that** (real XML screens, Fragments, bindings): stop. Explain that this kit doesn't support View-based or hybrid projects. Recommend that the person creates a new project with Android Studio's **Empty Activity** (Compose) template, then ports the code into features with `/android-starter:generate-feature`. Never scaffold on top of it.
 
 ### Report format
 
 Show one checklist: ✅ passes, ⚠️ handled by the scaffold, ❌ blocker. Add the fix for each ❌.
-- If there is any ❌, stop here. Ask the person to fix the blockers and run `/init-project` again.
+- If there is any ❌, stop here. Ask the person to fix the blockers and run `/android-starter:init-project` again.
 - Never fix a blocker yourself. Blockers touch the build setup and `libs.versions.toml`, and the hard rules protect those.
 - If everything is ✅/⚠️, continue to Step 0.
 
@@ -73,7 +76,7 @@ Run these steps in order. If any step stops, nothing has changed yet.
    - Those features use the current pattern's base classes. Switching `core/` would break the build (Step 6 can't go green).
    - This command never edits `feature/`.
 
-   The person can keep the current architecture. Or they can remove or migrate those features themselves and run `/init-project` again. Never offer to migrate them as part of this command.
+   The person can keep the current architecture. Or they can remove or migrate those features themselves and run `/android-starter:init-project` again. Never offer to migrate them as part of this command.
 2. **Ask which architecture** (Step 1). Then read **both** templates fully: the old one (named in `CLAUDE.md`'s `## Architecture`) and the new one.
 3. **Build the change plan** from the Project Structure sections of the two templates:
    - **Delete:** files under `core/` and `navigation/` that the old template lists and the new one doesn't (e.g. MVI-only base classes)
@@ -104,10 +107,10 @@ When they answer, read the matching file fully before you do anything else:
 
 | Answer | Template |
 |---|---|
-| MVVM | `.claude/templates/architecture/mvvm.md` |
-| MVVM + Clean | `.claude/templates/architecture/mvvm-clean.md` |
-| MVI | `.claude/templates/architecture/mvi.md` |
-| MVI + Clean | `.claude/templates/architecture/mvi-clean.md` |
+| MVVM | `${CLAUDE_PLUGIN_ROOT}/templates/architecture/mvvm.md` |
+| MVVM + Clean | `${CLAUDE_PLUGIN_ROOT}/templates/architecture/mvvm-clean.md` |
+| MVI | `${CLAUDE_PLUGIN_ROOT}/templates/architecture/mvi.md` |
+| MVI + Clean | `${CLAUDE_PLUGIN_ROOT}/templates/architecture/mvi-clean.md` |
 
 ## Step 3 — Apply the template's defaults
 
@@ -126,9 +129,9 @@ Follow the template's folder structure and file contents exactly.
   Never leave two themes side by side.
 - Every core/shared file must stay feature-agnostic. It must not import anything feature-specific.
 - Use the template's defaults from Step 3 for the base URL placeholder, JSON parser and local storage.
-- For every architecture, create `core/ui/components/` from `.claude/templates/shared/ui-components.md` (every component, plus the converter for the chosen architecture). Also add the Dimens tokens and string resources it lists.
-- For every architecture, apply `.claude/templates/shared/project-setup.md` (environments, signing, R8 keep rules, splash screen, unit-test setup, ktlint, CI workflow). Also create every file in `.claude/templates/shared/core-utils.md` (`Validator`, `InputLimits`, `DateTimeFormat`, `NavResult`).
-- For every architecture, also create the reference docs from `.claude/templates/shared/reference-docs.md` at the repo root:
+- For every architecture, create `core/ui/components/` from `${CLAUDE_PLUGIN_ROOT}/templates/shared/ui-components.md` (every component, plus the converter for the chosen architecture). Also add the Dimens tokens and string resources it lists.
+- For every architecture, apply `${CLAUDE_PLUGIN_ROOT}/templates/shared/project-setup.md` (environments, signing, R8 keep rules, splash screen, unit-test setup, ktlint, CI workflow). Also create every file in `${CLAUDE_PLUGIN_ROOT}/templates/shared/core-utils.md` (`Validator`, `InputLimits`, `DateTimeFormat`, `NavResult`).
+- For every architecture, also create the reference docs from `${CLAUDE_PLUGIN_ROOT}/templates/shared/reference-docs.md` at the repo root:
   - `docs/api/README.md`, `docs/oq/README.md`, `docs/feedback/README.md` and `docs/CHANGELOG.md` — create each one from its starter content, copied verbatim
   - `docs/ui/.gitkeep` — starts empty
   - the `updateChangelog` Gradle task — add it to the app module's `build.gradle.kts`
@@ -143,12 +146,12 @@ Create `CLAUDE.md` at the repo root with these sections, in this order:
 2. **`## Defaults`** — the template's full "Defaults" section, copied verbatim. These must stay visible in `CLAUDE.md`. Then a future session knows that these choices were deliberate and are already fixed. It won't work them out again or ask about them again.
 3. **`## Project Structure`** — the template's full "Project Structure" section, copied verbatim. A future session can then see the shape of the codebase without reading the template file again.
 4. **`## Constraints`** — the template's full "Constraints" section, copied verbatim. If the template has no `## Constraints` heading, stop and tell the person. Never skip it silently.
-5. Copy `.claude/templates/shared/hard-rules.md`: its `Hard Rules — Never Violate`, `Do Not Touch` and `Security` blocks, verbatim, in that order. Always do this, whatever architecture was chosen. These rules apply to every future coding session on this project, not just to this scaffold step.
+5. Copy `${CLAUDE_PLUGIN_ROOT}/templates/shared/hard-rules.md`: its `Hard Rules — Never Violate`, `Do Not Touch` and `Security` blocks, verbatim, in that order. Always do this, whatever architecture was chosen. These rules apply to every future coding session on this project, not just to this scaffold step.
    Then, if the template has a **"## CLAUDE.md content for this architecture"** section, copy its `## Architecture Hard Rules` block verbatim right after them. If that section is missing, don't skip it silently. Tell the person clearly that the chosen template has no architecture-specific rules, so only the generic ones apply. Match headings exactly. Never guess at a section with a similar name.
-6. Copy `.claude/templates/shared/coding-standards.md` in full (Code Style, Error Handling, Logging). Always do this, whatever architecture was chosen.
-7. Copy `.claude/templates/shared/git-workflow.md` in full (Commits, Pull Requests, Claude's own behavior). Always do this, whatever architecture was chosen.
-8. Copy `.claude/templates/shared/response-format.md` in full (Issue/Root Cause/Action Plan before changes, What/Why Changed/Issue Resolved after). Always do this, whatever architecture was chosen.
-9. Copy the `## Reference Docs` section of `.claude/templates/shared/reference-docs.md`: its doc list plus the `Trackers` and `File naming (best practice)` subsections. Always do this, whatever architecture was chosen. The starter-content blocks and the Gradle task are only for Step 4. Never copy them into `CLAUDE.md`.
+6. Copy `${CLAUDE_PLUGIN_ROOT}/templates/shared/coding-standards.md` in full (Code Style, Error Handling, Logging). Always do this, whatever architecture was chosen.
+7. Copy `${CLAUDE_PLUGIN_ROOT}/templates/shared/git-workflow.md` in full (Commits, Pull Requests, Claude's own behavior). Always do this, whatever architecture was chosen.
+8. Copy `${CLAUDE_PLUGIN_ROOT}/templates/shared/response-format.md` in full (Issue/Root Cause/Action Plan before changes, What/Why Changed/Issue Resolved after). Always do this, whatever architecture was chosen.
+9. Copy the `## Reference Docs` section of `${CLAUDE_PLUGIN_ROOT}/templates/shared/reference-docs.md`: its doc list plus the `Trackers` and `File naming (best practice)` subsections. Always do this, whatever architecture was chosen. The starter-content blocks and the Gradle task are only for Step 4. Never copy them into `CLAUDE.md`.
 10. **`## Feature Generation`** — a pointer: "New features are added with the feature-generation command/skill, following the pattern already scaffolded under `feature/`."
 
 ### Re-run (`CLAUDE.md` already exists — "Re-run the same architecture" from Step 0)

@@ -1,12 +1,12 @@
 # Feature Template: MVVM + Clean Architecture (feature-based, single module)
 
-> This template follows `.claude/templates/architecture/mvvm-clean.md` and the Hard Rules in the project's
+> This template follows `templates/architecture/mvvm-clean.md` and the Hard Rules in the project's
 > `CLAUDE.md`. It assumes the shared scaffold already exists: `core/mvvm/`, `core/network/` (`NetworkResult`,
 > `safeApiCall`), `core/di/`, `core/ui/`, `navigation/`. Do not recreate any of these files here. Only
 > reference or extend them.
 
 > For naming, features without an API, and moving a feature from one screen to two, follow
-> `.claude/templates/shared/feature-conventions.md`.
+> `templates/shared/feature-conventions.md`.
 
 ## Tech stack
 - UI: Jetpack Compose
@@ -128,7 +128,7 @@ feature/<feature_name>/
   - Is split into two functions:
     - a stateful `<Feature>Screen()` that wires the ViewModel
     - a stateless `<Feature>Content(state, onRefresh, onItemClick, ...)`. The `@Preview` renders it with sample state.
-  - Composes its body inside `AppScreen`, as in the "Screen usage" example in `.claude/templates/shared/ui-components.md`. Pass:
+  - Composes its body inside `AppScreen`, as in the "Screen usage" example in `templates/shared/ui-components.md`. Pass:
     - `loading = LoadingState(state.isLoading)`
     - `snackbarMessage = state.error.toErrorMessage(onRetry = ..., onDismiss = ...)`
     - `empty = EmptyState(...).takeIf { !state.isLoading && <no data> }`
@@ -152,7 +152,7 @@ feature/<feature_name>/
 - **Returning a value** (pickers):
   - The picker screen sends its result back with `navController.setNavResult(NavResultKeys.X, value)` + `popBackStack()` in `AppNavGraph`.
   - The caller registers `entry.NavResultEffect(NavResultKeys.X) { ... }`.
-  - See `.claude/templates/shared/core-utils.md`.
+  - See `templates/shared/core-utils.md`.
 - **Dialogs & sheets**: use a `showXDialog` / `showXSheet` State flag with `AppConfirmDialog` / `AppBottomSheet` / `SearchableBottomSheet`.
 - **Dates**: the mapper parses server dates with `DateTimeFormat.parseInstant` / `parseDate`. The Screen formats them with `DateTimeFormat.date(...)` etc.
 - **Tests** (`app/src/test/java/<package>/feature/<feature_name>/`): generate them with the feature.

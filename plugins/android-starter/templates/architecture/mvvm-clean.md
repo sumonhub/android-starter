@@ -1,4 +1,4 @@
-# Architecture Template: MVI (feature-based, single module)
+# Architecture Template: MVVM + Clean Architecture (feature-based, single module)
 
 ## Tech stack
 - UI: Jetpack Compose
@@ -9,12 +9,12 @@
 - Navigation: Jetpack Navigation Compose
 
 ## Goal
-Set up the full skeleton of a NEW project: core infra, theme, base MVI classes, DI wiring and the navigation shell. Features are added later with the standard feature-generation pattern. Do NOT create any feature yet. Only create the shared foundations.
+Set up the full skeleton of a NEW project: core infra, theme, base MVVM classes, DI wiring and the navigation shell. Features are added later with the standard feature-generation pattern. Do NOT create any feature yet. Only create the shared foundations.
 
-Note: this is plain MVI, with no Clean Architecture layers. Later, each feature gets a ViewModel plus State/Intent/Effect. The ViewModel talks directly to a single Repository. There is no domain UseCase layer and no Repository interface/impl split. This only affects how features are generated later. It does not change this shared scaffold.
+Note: each feature gets Clean layering (domain UseCases, data Repository impl, presentation ViewModel) later, when it is generated. This shared scaffold only provides the base MVVM contract and the infra. Every feature's presentation layer builds on them.
 
 ## Defaults
-- Base URL: `BuildConfig.BASE_URL`. Each build type (debug / staging / release) has one placeholder with a `// TODO` comment. See `.claude/templates/shared/project-setup.md`. `ApiConfig.kt` reads it and never declares a URL
+- Base URL: `BuildConfig.BASE_URL`. Each build type (debug / staging / release) has one placeholder with a `// TODO` comment. See `templates/shared/project-setup.md`. `ApiConfig.kt` reads it and never declares a URL
 - Local storage: Jetpack **DataStore (Preferences)** by default. No Room and no SQL entities in this shared scaffold
 - JSON parsing: **Gson**
 
@@ -37,11 +37,10 @@ app/src/main/java/com/example/app/
 │   │   ├── ApiConfig.kt                    # BASE_URL = BuildConfig.BASE_URL (per build type), timeouts
 │   │   ├── NetworkResult.kt                # sealed interface: Success<T>(data) / Error(code, message, cause) — no Loading case
 │   │   └── SafeApiCall.kt                  # safeApiCall { api.call() } → NetworkResult; rethrows CancellationException
-│   ├── mvi/
-│   │   ├── MviIntent.kt                    # marker interface: interface MviIntent
-│   │   ├── MviState.kt                     # marker interface: interface MviState
-│   │   ├── MviEffect.kt                    # marker interface: interface MviEffect
-│   │   └── BaseViewModel.kt                # abstract class BaseViewModel<S: MviState, I: MviIntent, E: MviEffect>
+│   ├── mvvm/
+│   │   ├── UiState.kt                      # marker interface: interface UiState
+│   │   ├── UiEvent.kt                      # marker interface: interface UiEvent (one-off events: navigate, show snackbar, etc.)
+│   │   └── BaseViewModel.kt                # abstract class BaseViewModel<S: UiState>
 │   ├── ui/
 │   │   ├── theme/
 │   │   │   ├── Color.kt
@@ -65,6 +64,13 @@ app/src/main/java/com/example/app/
     └── .gitkeep
 ```
 
+Each feature generated later uses this internal layout, in this order:
+- `data/`: RepositoryImpl, DTOs, remote/local sources
+- `domain/`: Repository interface, UseCases, domain models
+- `presentation/`: ViewModel extending `BaseViewModel`, UiState, Composable screen
+
+This shared scaffold does not create any of that. It only creates the base classes those layers will extend.
+
 
 ## Marker Reference
 
@@ -81,16 +87,17 @@ Component placement:
 ## Dependency Direction
 
 ```
-feature/featureX/presentation  ──→  feature/featureX/data
-                        ↑
-                  core/ (all layers use)
-                        ↑
-         core/di/ + feature/featureX/di/ (binds everything)
+feature/featureX/presentation  ──→  feature/featureX/domain  ←──  feature/featureX/data
+                                              ↑
+                                        core/ (all layers use)
+                                              ↑
+                               core/di/ + feature/featureX/di/ (binds everything)
 ```
 
+- `domain/` never imports `data/`, `presentation/`, or Android/Retrofit/Gson classes. The only `core/` type it uses is `NetworkResult`
 - `core/` never imports any feature package
-- `presentation/` never imports `data/remote/dto/`. It sees only the mapped model
-- A feature never imports another feature's `presentation/` or DTOs. It injects that feature's Repository instead
+- DTOs never leave `data/`
+- A feature never imports another feature's `data/` or `presentation/`. It injects that feature's UseCase or Repository interface instead
 
 ---
 
@@ -120,6 +127,7 @@ See "## Project Structure" above. Create exactly that tree, nothing more and not
 - Provide an OkHttpClient singleton. Add the logging interceptor only `if (BuildConfig.DEBUG)`. The interceptor writes through `AppLogger` and masks passwords / OTPs / tokens
 - Provide a Retrofit singleton that uses ApiConfig.BASE_URL
 - ALL features reuse this Retrofit instance (`get<Retrofit>().create(XApi::class.java)`). Features never build their own Retrofit
+- Each feature's `RepositoryImpl` (data layer) calls this Retrofit-built API service. The ViewModel or UseCase never calls it directly
 
 `core/network/NetworkResult.kt` + `SafeApiCall.kt` are the only place where a Retrofit `Response` / exception becomes a result:
 ```kotlin
@@ -150,19 +158,19 @@ Loading is UI state (`isLoading` in the screen's State). It is never a `NetworkR
 
 ## Step 6: BaseViewModel.kt content
 ```kotlin
-abstract class BaseViewModel<S : MviState, I : MviIntent, E : MviEffect>(initialState: S) : ViewModel() {
+abstract class BaseViewModel<S : UiState>(initialState: S) : ViewModel() {
     private val _state = MutableStateFlow(initialState)
     val state: StateFlow<S> = _state.asStateFlow()
 
-    private val _effect = Channel<E>(Channel.BUFFERED)
-    val effect = _effect.receiveAsFlow()
+    private val _event = Channel<UiEvent>(Channel.BUFFERED)
+    val event = _event.receiveAsFlow()
 
     protected fun setState(reducer: S.() -> S) {
         _state.update(reducer)
     }
 
-    protected fun sendEffect(effect: E) {
-        viewModelScope.launch { _effect.send(effect) }
+    protected fun sendEvent(event: UiEvent) {
+        viewModelScope.launch { _event.send(event) }
     }
 
     /** Every coroutine a feature ViewModel starts goes through here — an unexpected exception (e.g. a mapper failing on bad data) lands in handleError instead of crashing the app. */
@@ -184,22 +192,20 @@ abstract class BaseViewModel<S : MviState, I : MviIntent, E : MviEffect>(initial
 
     /** Override in every feature ViewModel: setState { copy(isLoading = false, error = NetworkResult.Error(cause = throwable)) }. */
     protected open fun handleError(throwable: Throwable) {}
-
-    abstract fun processIntent(intent: I)
 }
 ```
 
-Later, each feature's ViewModel calls its Repository directly from `processIntent`. There is no UseCase layer in between.
+Unlike MVI, there is no `processIntent` contract. Each feature ViewModel exposes its own explicit public functions (e.g. `fun onSubmitClicked()`). These functions call the feature's UseCases and then call `setState { ... }` with the result.
 
 ## Step 7: UI components (`core/ui/components/`)
-Create every component in `.claude/templates/shared/ui-components.md` exactly as written there: `AppScreen`, `AppSnackbar`, `AppTopBar`, `AppButton`, `AppChip`, `Avatar`, `LoadingIndicator`, `ErrorView`, `EmptyView`. Also create the `NetworkResult.Error?.toErrorMessage()` converter in `AppSnackbar.kt`. That file also lists the Dimens tokens and string resources the components need.
+Create every component in `templates/shared/ui-components.md` exactly as written there: `AppScreen`, `AppSnackbar`, `AppTopBar`, `AppButton`, `AppChip`, `Avatar`, `LoadingIndicator`, `ErrorView`, `EmptyView`. Also create the `NetworkResult.Error?.toErrorMessage()` converter in `AppSnackbar.kt`. That file also lists the Dimens tokens and string resources the components need.
 
 ## Step 8: NavGraph shell
 - `AppNavGraph.kt`: an empty `NavHost` with a placeholder `startDestination` "home". The system splash screen comes first, so there is no splash route
 - Comment: `// composable(Routes.FeatureX.route) { FeatureXScreen() } — added when features are generated`
 
 ## Step 9: Project setup + core utilities
-Apply all of `.claude/templates/shared/project-setup.md`: environments (debug/staging/release `BASE_URL`), release signing from `keystore.properties`, R8 keep rules for DTOs, splash screen, unit-test setup (`MainDispatcherRule`), ktlint + `.editorconfig`, and the GitHub Actions workflow. Then create every file in `.claude/templates/shared/core-utils.md`: `core/util/Validator.kt`, `InputLimits.kt`, `DateTimeFormat.kt` and `navigation/NavResult.kt`.
+Apply all of `templates/shared/project-setup.md`: environments (debug/staging/release `BASE_URL`), release signing from `keystore.properties`, R8 keep rules for DTOs, splash screen, unit-test setup (`MainDispatcherRule`), ktlint + `.editorconfig`, and the GitHub Actions workflow. Then create every file in `templates/shared/core-utils.md`: `core/util/Validator.kt`, `InputLimits.kt`, `DateTimeFormat.kt` and `navigation/NavResult.kt`.
 
 ## Step 10: Verify
 - `./gradlew ktlintCheck testDebugUnitTest assembleDebug` passes. The app launches and shows the system splash screen first
@@ -207,34 +213,33 @@ Apply all of `.claude/templates/shared/project-setup.md`: environments (debug/st
 - The app launches to a blank themed screen inside `AppScreen`. This proves that Koin, Theme, the NavGraph shell and the components are wired correctly
 
 ## Constraints
-- The generic rules in `.claude/templates/shared/hard-rules.md` (Hard Rules, Do Not Touch, Security) also apply to this architecture
+- The generic rules in `templates/shared/hard-rules.md` (Hard Rules, Do Not Touch, Security) also apply to this architecture
 - Do not create any feature folder content beyond the empty `feature/` placeholder
 - Do not hardcode any business logic, model, or screen here. This step is infra only
 - Every core module must be feature-agnostic. It must not import anything feature-specific
-- No domain/UseCase layer anywhere in this scaffold. Features will call their Repository directly from the ViewModel
+- `core/mvvm/BaseViewModel.kt` must not know about any concrete feature's UseCases or Repository
 - Every Composable screen includes a `@Preview` composable with representative/sample state. Reusable `core/ui/components/` components include one too, where practical
 
 ## CLAUDE.md content for this architecture
 
-> The generic rules (`Hard Rules — Never Violate`, `Do Not Touch`, `Security`) live in `.claude/templates/shared/hard-rules.md`. They also apply to this architecture and are not repeated here.
-> `/init-project` Step 5 copies the `## Architecture Hard Rules` block below into the project's `CLAUDE.md` verbatim, right after those generic blocks. Keep exactly this one `##` block here. Anything outside it is not copied.
+> The generic rules (`Hard Rules — Never Violate`, `Do Not Touch`, `Security`) live in `templates/shared/hard-rules.md`. They also apply to this architecture and are not repeated here.
+> `/android-starter:init-project` Step 5 copies the `## Architecture Hard Rules` block below into the project's `CLAUDE.md` verbatim, right after those generic blocks. Keep exactly this one `##` block here. Anything outside it is not copied.
 
 ```markdown
 ## Architecture Hard Rules
 
-> Plain MVI (no Clean layer). These add to the generic Hard Rules above.
+> MVVM + Clean Architecture. These add to the generic Hard Rules above.
 
-- **ViewModel calls the feature's Repository directly**. No UseCase layer, no Repository interface/impl split
-- **DTOs never reach `presentation/`**. The Repository maps every DTO to the feature's model before it returns
+- **Never call Repository or ApiService from a ViewModel**. Always go through a UseCase
+- **Never add Android/Retrofit/Gson imports in `domain/`**. It is pure Kotlin only. `NetworkResult` is the domain's result type
+- **Repository interface lives in `domain/repository/`, its implementation in `data/repository/`**. DTOs never leave `data/`
+- **UseCase**: one class per operation, with `suspend operator fun invoke()`. It depends only on Repository interfaces. Business rules live here, never in the ViewModel or RepositoryImpl. Exception: field-format checks with `Validator` stay in the ViewModel
 - **Repositories call the API only through `safeApiCall` from `core/network`**. Never write your own `try/catch` or `response.isSuccessful` check
 - **ViewModel coroutines always go through `launchSafely { ... }`**, never raw `viewModelScope.launch`. **`handleError` override is mandatory** in every feature ViewModel: `setState { copy(isLoading = false, error = NetworkResult.Error(cause = throwable)) }`. Without it, the base no-op would silently swallow the error
 - **Never use raw try/catch in a ViewModel**. `safeApiCall` already turned failures into `NetworkResult.Error`. The ViewModel checks the result with `when` and updates state
 - **Errors are converted to text in the Screen at render time**. State holds `error: NetworkResult.Error?`, never a display string
-- **ViewModel extends `core/mvi/BaseViewModel<State, Intent, Effect>`**. It never redeclares `MutableStateFlow`/`Channel`
-- **Never use `sealed class` for a feature's Effect or Intent**. Always use `sealed interface XEffect : MviEffect` / `sealed interface XIntent : MviIntent`. The core markers stay plain `interface`
-- **MVI contract rules:**
-  - **State**: one immutable `data class XState : MviState` per screen. Use only `val` + immutable collections, with explicit `isLoading` and `error` fields. Change it **only** with `setState { copy(...) }`
-  - **Intent**: the Screen talks to the ViewModel **only** through `viewModel.processIntent(...)`
-  - **Effect**: **one-shot events only** (navigate, toast). Anything the screen must still show after rotation belongs in State
-  - **Screen** collects `effect` only inside `LaunchedEffect(Unit) { viewModel.effect.collect { ... } }`
+- **ViewModel extends `core/mvvm/BaseViewModel<UiState>`**. It never redeclares `MutableStateFlow`/`Channel` and never exposes a mutable flow
+- **One public ViewModel function per user action** (`onRefresh()`, `onItemClicked(id)`). No `processIntent`. The Screen never mutates ViewModel fields
+- **UiState**: one immutable `data class XUiState : UiState` per screen. Use only `val` + immutable collections, with explicit `isLoading` and `error` fields. Change it **only** with `setState { copy(...) }`
+- **UiEvent**: `sealed interface XUiEvent : UiEvent`, for **one-shot events only** (navigate, toast). Send it with `sendEvent(...)`. Collect it only inside `LaunchedEffect(Unit) { viewModel.event.collect { ... } }`. Anything the screen must still show after rotation belongs in UiState
 ```

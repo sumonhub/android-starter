@@ -1,11 +1,11 @@
-# Feature Template: MVVM (feature-based, single module)
+# Feature Template: MVI (feature-based, single module)
 
-> This template follows `.claude/templates/architecture/mvvm.md` and the Hard Rules in the project's `CLAUDE.md`.
-> It assumes the shared scaffold already exists: `core/mvvm/`, `core/network/` (`NetworkResult`, `safeApiCall`),
+> This template follows `templates/architecture/mvi.md` and the Hard Rules in the project's `CLAUDE.md`.
+> It assumes the shared scaffold already exists: `core/mvi/`, `core/network/` (`NetworkResult`, `safeApiCall`),
 > `core/di/`, `core/ui/`, `navigation/`. Do not recreate any of these files here. Only reference or extend them.
 
 > For naming, features without an API, and moving a feature from one screen to two, follow
-> `.claude/templates/shared/feature-conventions.md`.
+> `templates/shared/feature-conventions.md`.
 
 ## Tech stack
 - UI: Jetpack Compose
@@ -15,14 +15,13 @@
 - Async: Kotlin Coroutines + Flow
 
 ## Architecture Rules (MUST FOLLOW)
-- Pattern: plain MVVM, single module, feature-based.
+- Pattern: plain MVI, single module, feature-based.
 - **No domain layer, no UseCases, no Repository interface/impl split.**
 - Each feature is self-contained. It lives under `feature/<feature_name>/` and has its own `data/`, `presentation/`, `di/`.
 - The ViewModel calls the feature's Repository directly.
-- The ViewModel exposes **explicit public functions** (`fun onRefresh()`, `fun onItemClicked(id: String)`). There is no `processIntent`.
 - If another feature needs this feature's data, it injects this feature's Repository. It never imports this feature's `presentation/` package or its DTOs.
 - The theme/design system lives in `core/ui/theme/`. Common widgets live in `core/ui/components/`. Reuse them. Do not redefine them.
-- Some capabilities (search, filter, sort) work on the same data and the same UI area as an existing screen. Merge them into that screen's UiState/ViewModel. Do not create a separate screen for them.
+- Some capabilities (search, filter, sort) work on the same data and the same UI area as an existing screen. Merge them into that screen's State/Intent. Do not create a separate screen/ViewModel for them.
 - Only create a separate screen when it has its own distinct route and its own distinct UI.
 
 ## Defaults (no need to ask)
@@ -48,7 +47,7 @@ feature/<feature_name>/
 │   └── <Feature>Repository.kt                   (concrete class — no interface)
 ├── presentation/                                 # single-screen feature (most common case) — no screen subfolder
 │   ├── components/                              [CONDITIONAL] Composables reused across 2+ screens in this feature
-│   ├── <Feature>UiState.kt                       (UiState data class + UiEvent sealed interface)
+│   ├── <Feature>Contract.kt                      (State + Intent + Effect — all three in one file)
 │   ├── <Feature>ViewModel.kt
 │   └── <Feature>Screen.kt
 └── di/
@@ -56,7 +55,7 @@ feature/<feature_name>/
 ```
 
 > Add a per-screen subfolder only when the feature really has 2+ distinct screens. Each subfolder is
-> `presentation/<screenName>/`. It has its own UiState/ViewModel/Screen and an optional `components/`.
+> `presentation/<screenName>/`. It has its own Contract/ViewModel/Screen and an optional `components/`.
 
 ## Requirements per layer
 
@@ -78,33 +77,33 @@ feature/<feature_name>/
 - Retrofit suspend calls are main-safe. Inject a dispatcher (`get(named("io"))`) only if the repository itself does blocking or heavy work.
 
 ### presentation/ — for EACH screen
-- **UiState.kt**:
-  - `data class <Feature>UiState(...) : UiState`. Use only `val` and immutable collections. It must include:
+- **Contract.kt**:
+  - `State`: `data class <Feature>State(...) : MviState`. Use only `val` and immutable collections. It must include:
     - `isLoading: Boolean`
     - `error: NetworkResult.Error?`. This is not a display string. It is converted when the screen renders.
     - `isRefreshing: Boolean`, for server-data screens
     - the screen data
     - search/filter fields, if any
-  - `sealed interface <Feature>UiEvent : UiEvent`. Use it for one-shot events only (NavigateToDetail, ShowToast). Anything that must survive rotation belongs in UiState.
+  - `Intent`: `sealed interface <Feature>Intent : MviIntent`. It covers every user action (Load, Refresh, Retry, ErrorDismissed, ItemClicked, ...).
+  - `Effect`: `sealed interface <Feature>Effect : MviEffect`. Use it for one-shot events only (Navigate, ShowToast). Anything that must survive rotation belongs in State.
 - **ViewModel.kt**:
-  - Extends `core/mvvm/BaseViewModel<<Feature>UiState>`. Never redeclares `MutableStateFlow`/`Channel`.
+  - Extends `core/mvi/BaseViewModel<State, Intent, Effect>`. Never redeclares `MutableStateFlow`/`Channel`.
   - Gets the Repository by constructor injection (via Koin).
-  - Loads initial data in `init { load() }`.
-  - Has one public function for each user action. This includes `onRefresh()`, `onRetry()` and `onErrorDismissed()`. `onErrorDismissed()` clears `error`.
+  - Overrides only `processIntent(intent)`.
   - Runs work in `launchSafely { ... }`, which it inherits from `BaseViewModel`. Never uses raw `viewModelScope.launch`.
   - Handles results with `when (val result = repository.getList())` → `setState { copy(...) }`.
-  - Sends one-shot events with `sendEvent(...)`.
   - Needs no `try/catch`. `safeApiCall` already turned failures into `NetworkResult.Error`.
   - Must override `handleError(throwable)`: `setState { copy(isLoading = false, error = NetworkResult.Error(cause = throwable)) }`
   - If search exists, debounces search input (300ms) with a cancellable `Job`.
 - **Screen.kt**:
   - Resolves the ViewModel with `koinViewModel()`.
   - Collects `state` with `collectAsStateWithLifecycle()`.
-  - Collects `event` inside `LaunchedEffect(Unit) { viewModel.event.collect { ... } }`.
+  - Collects `effect` inside `LaunchedEffect(Unit) { viewModel.effect.collect { ... } }`.
+  - Talks to the ViewModel **only** through `viewModel.processIntent(...)`.
   - Is split into two functions:
     - a stateful `<Feature>Screen()` that wires the ViewModel
-    - a stateless `<Feature>Content(state, onRefresh, onItemClick, ...)`. The `@Preview` renders it with sample state.
-  - Composes its body inside `AppScreen`, as in the "Screen usage" example in `.claude/templates/shared/ui-components.md`. Pass:
+    - a stateless `<Feature>Content(state, onIntent)`. The `@Preview` renders it with sample state.
+  - Composes its body inside `AppScreen`, as in the "Screen usage" example in `templates/shared/ui-components.md`. Pass:
     - `loading = LoadingState(state.isLoading)`
     - `snackbarMessage = state.error.toErrorMessage(onRetry = ..., onDismiss = ...)`
     - `empty = EmptyState(...).takeIf { !state.isLoading && <no data> }`
@@ -127,7 +126,7 @@ feature/<feature_name>/
 - **Returning a value** (pickers):
   - The picker screen sends its result back with `navController.setNavResult(NavResultKeys.X, value)` + `popBackStack()` in `AppNavGraph`.
   - The caller registers `entry.NavResultEffect(NavResultKeys.X) { ... }`.
-  - See `.claude/templates/shared/core-utils.md`.
+  - See `templates/shared/core-utils.md`.
 - **Dialogs & sheets**: use a `showXDialog` / `showXSheet` State flag with `AppConfirmDialog` / `AppBottomSheet` / `SearchableBottomSheet`.
 - **Dates**: the mapper parses server dates with `DateTimeFormat.parseInstant` / `parseDate`. The Screen formats them with `DateTimeFormat.date(...)` etc.
 - **Tests** (`app/src/test/java/<package>/feature/<feature_name>/`): generate them with the feature.
@@ -147,8 +146,8 @@ feature/<feature_name>/
 
 ## Constraints
 - DTOs never reach `presentation/`. Always map them to the model in the Repository.
-- Every UiState has explicit `isLoading` / `error` fields. Never infer status from nullable data.
-- Every screen follows the same 3-file pattern (UiState, ViewModel, Screen).
+- Every State has explicit `isLoading` / `error` fields. Never infer status from nullable data.
+- Every screen follows the same 3-file pattern (Contract, ViewModel, Screen).
 - Dependencies come from Koin (`get()`, `koinViewModel()`). Never create dependencies by hand.
 - Every rule in the project's `CLAUDE.md` `## Hard Rules — Never Violate` applies here too.
 - When anything is unclear, ask before generating.

@@ -1,6 +1,6 @@
 # Shared Reference Docs (all architectures)
 
-> Applies to every project, whatever architecture pattern was chosen. `/init-project` copies the `## Reference Docs`
+> Applies to every project, whatever architecture pattern was chosen. `/android-starter:init-project` copies the `## Reference Docs`
 > section below (with its subsections) into every project's `CLAUDE.md`. It also creates the matching folders and
 > starter files from the starter-content blocks further down. Those blocks are never copied into `CLAUDE.md`.
 

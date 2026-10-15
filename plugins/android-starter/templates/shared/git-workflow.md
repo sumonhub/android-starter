@@ -1,6 +1,6 @@
 # Shared Git & PR Workflow (all architectures)
 
-> Applies to every project, whatever architecture pattern was chosen. `/init-project` copies this
+> Applies to every project, whatever architecture pattern was chosen. `/android-starter:init-project` copies this
 > into every project's `CLAUDE.md` without changes.
 
 ## Commits

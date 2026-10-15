@@ -24,7 +24,7 @@ Later, you add features with the standard feature-generation pattern below. Do N
 ---
  
 ## Defaults
-- Base URL: `BuildConfig.BASE_URL`. Use one placeholder per build type (debug / staging / release), each with a `// TODO` comment. See `.claude/templates/shared/project-setup.md`. `ApiConfig.kt` reads this value. It never declares a URL itself.
+- Base URL: `BuildConfig.BASE_URL`. Use one placeholder per build type (debug / staging / release), each with a `// TODO` comment. See `templates/shared/project-setup.md`. `ApiConfig.kt` reads this value. It never declares a URL itself.
 - Local storage: DataStore (Preferences). The shared scaffold has no Room and no SQL.
 - JSON: Gson
 These defaults are fixed. Do not ask about them. Change them only if the user says so explicitly.
@@ -663,7 +663,7 @@ LaunchedEffect(Unit) {
  
 ### Step 8: UI components (`core/ui/components/`)
 
-Create every component in `.claude/templates/shared/ui-components.md`, exactly as written there:
+Create every component in `templates/shared/ui-components.md`, exactly as written there:
 - `AppScreen`, `AppSnackbar`, `AppTopBar`, `AppButton`, `AppChip`, `Avatar`, `LoadingIndicator`, `ErrorView`, `EmptyView`
 - the **MVI + Clean** converter in `AppSnackbar.kt`: `UiStatus.toErrorMessage()`, `Failure?.toErrorMessage()`, `Failure.toMessage()`
 
@@ -675,7 +675,7 @@ Screens follow the shared file's "Screen usage" example:
 
 ### Step 9: Project setup + core utilities
 
-Apply all of `.claude/templates/shared/project-setup.md`:
+Apply all of `templates/shared/project-setup.md`:
 - environments (debug/staging/release `BASE_URL`)
 - release signing from `keystore.properties`
 - R8 keep rules for DTOs
@@ -684,7 +684,7 @@ Apply all of `.claude/templates/shared/project-setup.md`:
 - ktlint + `.editorconfig`
 - the GitHub Actions workflow
 
-Then create every file in `.claude/templates/shared/core-utils.md`: `core/util/Validator.kt`, `InputLimits.kt`, `DateTimeFormat.kt` and `navigation/NavResult.kt`.
+Then create every file in `templates/shared/core-utils.md`: `core/util/Validator.kt`, `InputLimits.kt`, `DateTimeFormat.kt` and `navigation/NavResult.kt`.
 
 ### Step 10: Navigation shell
  
@@ -743,8 +743,8 @@ modules(coreModules + listOf(
  
 ## CLAUDE.md content for this architecture
 
-> The generic rules (`Hard Rules — Never Violate`, `Do Not Touch`, `Security`) live in `.claude/templates/shared/hard-rules.md`. They apply to this architecture too. They are not repeated here.
-> `/init-project` Step 5 copies the `## Architecture Hard Rules` block below into the project's `CLAUDE.md` word for word, right after those generic blocks. Keep exactly this one `##` block here. Anything outside it is not copied.
+> The generic rules (`Hard Rules — Never Violate`, `Do Not Touch`, `Security`) live in `templates/shared/hard-rules.md`. They apply to this architecture too. They are not repeated here.
+> `/android-starter:init-project` Step 5 copies the `## Architecture Hard Rules` block below into the project's `CLAUDE.md` word for word, right after those generic blocks. Keep exactly this one `##` block here. Anything outside it is not copied.
 
 ```markdown
 ## Architecture Hard Rules

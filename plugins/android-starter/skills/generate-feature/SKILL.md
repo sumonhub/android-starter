@@ -1,8 +1,11 @@
 ---
 description: Generate a new self-contained feature (domain/data/presentation/di) matching the project's chosen architecture
+disable-model-invocation: true
 ---
 
-# /generate-feature
+# /android-starter:generate-feature
+
+> **Plugin files:** this skill's templates live in `${CLAUDE_PLUGIN_ROOT}/templates/`. When a template mentions a path that starts with `templates/`, it means `${CLAUDE_PLUGIN_ROOT}/templates/`.
 
 You are generating a **new feature module** under `feature/<feature_name>/`. This command decides the order of work. The feature template decides what the code looks like. Never restate or reinterpret a template rule here. Follow the template.
 
@@ -12,26 +15,26 @@ You are generating a **new feature module** under `feature/<feature_name>/`. Thi
 
 ## Step 0 — Check the project is initialized
 
-Use the same check as `/init-project`'s Step 0: `CLAUDE.md` exists at the root with an `## Architecture` section, and `core/` exists under the app module. If either is missing, stop. Tell the person that the shared foundation isn't scaffolded yet and that `/init-project` must run first. Never generate a feature without it. Never pick an architecture yourself.
+Use the same check as `/android-starter:init-project`'s Step 0: `CLAUDE.md` exists at the root with an `## Architecture` section, and `core/` exists under the app module. If either is missing, stop. Tell the person that the shared foundation isn't scaffolded yet and that `/android-starter:init-project` must run first. Never generate a feature without it. Never pick an architecture yourself.
 
 ## Step 1 — Get the feature name
 
 If the person already gave a feature name in their message (e.g. "generate the Order feature"), use it. Don't ask again. Otherwise, ask for one.
 
-Derive every name (package, class prefix, Koin module, routes) as described in the "Naming" section of `.claude/templates/shared/feature-conventions.md`.
+Derive every name (package, class prefix, Koin module, routes) as described in the "Naming" section of `${CLAUDE_PLUGIN_ROOT}/templates/shared/feature-conventions.md`.
 
-If `feature/<feature_name>/` already exists, stop. Never overwrite or regenerate an existing feature. Tell the person, and point them to `/generate-screen` to add a screen to it.
+If `feature/<feature_name>/` already exists, stop. Never overwrite or regenerate an existing feature. Tell the person, and point them to `/android-starter:generate-screen` to add a screen to it.
 
 ## Step 2 — Load the matching feature template
 
-Check `CLAUDE.md`'s `## Architecture` section. Read the matching file below fully, plus `.claude/templates/shared/feature-conventions.md`, before you generate anything:
+Check `CLAUDE.md`'s `## Architecture` section. Read the matching file below fully, plus `${CLAUDE_PLUGIN_ROOT}/templates/shared/feature-conventions.md`, before you generate anything:
 
 | Architecture | Template |
 |---|---|
-| MVI + Clean | `.claude/templates/feature/mvi-clean.md` |
-| MVI | `.claude/templates/feature/mvi.md` |
-| MVVM + Clean | `.claude/templates/feature/mvvm-clean.md` |
-| MVVM | `.claude/templates/feature/mvvm.md` |
+| MVI + Clean | `${CLAUDE_PLUGIN_ROOT}/templates/feature/mvi-clean.md` |
+| MVI | `${CLAUDE_PLUGIN_ROOT}/templates/feature/mvi.md` |
+| MVVM + Clean | `${CLAUDE_PLUGIN_ROOT}/templates/feature/mvvm-clean.md` |
+| MVVM | `${CLAUDE_PLUGIN_ROOT}/templates/feature/mvvm.md` |
 
 If `CLAUDE.md` names an architecture that is not in this table, or the template file is missing, say so and stop. Don't invent an architecture that wasn't scaffolded.
 
@@ -49,7 +52,7 @@ Before you create a new model, check whether an existing feature under `feature/
 
 Generate exactly what the template lists: its folder structure, per-layer requirements and tests ("Forms, pickers, dialogs and tests"). Include every listed file, no more and no less. Skip conditional files that the feature doesn't need (e.g. a Search UseCase when there is no search).
 
-For the feature's screens, also apply these steps from `/generate-screen` (`.claude/commands/generate-screen.md`):
+For the feature's screens, also apply these steps from `/android-starter:generate-screen` (`${CLAUDE_PLUGIN_ROOT}/skills/generate-screen/SKILL.md`):
 - **Step 4** — the resource-reuse gate (color, string, dimen, shape, typography, components). Run it before you add any new resource
 - **Step 7** — add every new string to `values/strings.xml` and to every `values-<locale>/strings.xml`
 

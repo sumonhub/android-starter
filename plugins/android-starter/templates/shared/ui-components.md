@@ -1,7 +1,7 @@
 # Shared UI Components (all architectures)
 
 > This file applies to every architecture pattern.
-> For every architecture, `/init-project` creates every component below in `core/ui/components/`.
+> For every architecture, `/android-starter:init-project` creates every component below in `core/ui/components/`.
 > It also creates the error → snackbar converter for the chosen architecture (see the last section).
 > The usage rules are in `shared/hard-rules.md` (`UI components`). That way they reach every project's `CLAUDE.md`.
 >

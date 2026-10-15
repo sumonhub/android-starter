@@ -1,6 +1,6 @@
 # Shared Feature Conventions (all architectures)
 
-> Applies to every feature, whatever the architecture. `/generate-feature` and `/generate-screen` read this
+> Applies to every feature, whatever the architecture. `/android-starter:generate-feature` and `/android-starter:generate-screen` read this
 > file together with the matching feature template. The feature template decides what each layer's code looks
 > like. This file decides naming, features without an API, and how a feature grows from one screen to two.
 

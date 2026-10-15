@@ -1,0 +1,12 @@
+{
+  "name": "android-starter",
+  "description": "Claude Code plugins for starting Android projects.",
+  "owner": { "name": "sumonhub" },
+  "plugins": [
+    {
+      "name": "android-starter",
+      "source": "./plugins/android-starter",
+      "description": "Scaffold an Android Compose project's architecture foundation, then generate features and screens that follow it."
+    }
+  ]
+}

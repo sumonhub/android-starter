@@ -1,6 +1,6 @@
 # Shared Project Setup (all architectures)
 
-> Applies to every project, whatever architecture pattern was chosen. `/init-project` applies every section below to the
+> Applies to every project, whatever architecture pattern was chosen. `/android-starter:init-project` applies every section below to the
 > new project. It also runs the architecture template's own Gradle step. Use the latest stable version of each
 > library/plugin named here, and add it to `gradle/libs.versions.toml`. Never hardcode a version in a build file.
 

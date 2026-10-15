@@ -1,10 +1,13 @@
 ---
 description: Generate a single Compose screen from a Figma design or screenshot, following the project's chosen architecture, reusing existing colors/strings/dimens/shapes/typography/components before adding anything new
+disable-model-invocation: true
 ---
 
-# /generate-screen
+# /android-starter:generate-screen
 
-You are generating a **single screen** inside `feature/<feature_name>/`. A screen is a state holder + ViewModel + Screen, plus data/domain wiring if it needs data. This command is narrower than `/generate-feature`:
+> **Plugin files:** this skill's templates live in `${CLAUDE_PLUGIN_ROOT}/templates/`. When a template mentions a path that starts with `templates/`, it means `${CLAUDE_PLUGIN_ROOT}/templates/`.
+
+You are generating a **single screen** inside `feature/<feature_name>/`. A screen is a state holder + ViewModel + Screen, plus data/domain wiring if it needs data. This command is narrower than `/android-starter:generate-feature`:
 - It starts from a Figma design, not from a feature description.
 - It prefers to *reuse* what already exists in the codebase before it creates anything new.
 
@@ -16,13 +19,13 @@ This command decides the order of work. The feature template decides what the co
 
 ## Step 0 — Check the project is initialized
 
-Use the same check as `/init-project`'s Step 0: `CLAUDE.md` exists at the root with an `## Architecture` section, and `core/` exists under the app module. If either is missing, stop. Tell the person that the shared foundation isn't scaffolded yet and that `/init-project` must run first. Never generate a screen without it. Never pick an architecture or a folder yourself.
+Use the same check as `/android-starter:init-project`'s Step 0: `CLAUDE.md` exists at the root with an `## Architecture` section, and `core/` exists under the app module. If either is missing, stop. Tell the person that the shared foundation isn't scaffolded yet and that `/android-starter:init-project` must run first. Never generate a screen without it. Never pick an architecture or a folder yourself.
 
 ## Step 1 — Intake
 
 Ask for anything the person didn't already give in their message:
 1. A Figma link, or a screenshot of the screen
-2. The feature name + screen name (e.g. `feature: auth`, `screen: signIn`). Derive every name as described in the "Naming" section of `.claude/templates/shared/feature-conventions.md`
+2. The feature name + screen name (e.g. `feature: auth`, `screen: signIn`). Derive every name as described in the "Naming" section of `${CLAUDE_PLUGIN_ROOT}/templates/shared/feature-conventions.md`
 3. What data the screen needs:
    - **API** — the real endpoint (check `docs/api/README.md` first), or "mock" if the backend isn't ready yet
    - **Local only** (settings, flags, drafts) or **no data** (static screen) — follow "Features without an API" in `feature-conventions.md`
@@ -31,14 +34,14 @@ Don't go past this step with guesses. A wrong feature/screen name or a wrong end
 
 ## Step 2 — Load the matching feature template
 
-Check `CLAUDE.md`'s `## Architecture` section. Read the matching file below fully, plus `.claude/templates/shared/feature-conventions.md`. Every later step follows their requirements:
+Check `CLAUDE.md`'s `## Architecture` section. Read the matching file below fully, plus `${CLAUDE_PLUGIN_ROOT}/templates/shared/feature-conventions.md`. Every later step follows their requirements:
 
 | Architecture | Template |
 |---|---|
-| MVI + Clean | `.claude/templates/feature/mvi-clean.md` |
-| MVI | `.claude/templates/feature/mvi.md` |
-| MVVM + Clean | `.claude/templates/feature/mvvm-clean.md` |
-| MVVM | `.claude/templates/feature/mvvm.md` |
+| MVI + Clean | `${CLAUDE_PLUGIN_ROOT}/templates/feature/mvi-clean.md` |
+| MVI | `${CLAUDE_PLUGIN_ROOT}/templates/feature/mvi.md` |
+| MVVM + Clean | `${CLAUDE_PLUGIN_ROOT}/templates/feature/mvvm-clean.md` |
+| MVVM | `${CLAUDE_PLUGIN_ROOT}/templates/feature/mvvm.md` |
 
 If `CLAUDE.md` names an architecture that is not in this table, or the template file is missing, say so and stop.
 

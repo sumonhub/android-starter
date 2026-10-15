@@ -1,6 +1,6 @@
 # Shared Hard Rules (all architectures)
 
-> Applies to every project, whatever architecture pattern was chosen. `/init-project` copies the three `##` blocks
+> Applies to every project, whatever architecture pattern was chosen. `/android-starter:init-project` copies the three `##` blocks
 > below into every project's `CLAUDE.md` without changes. After them, it adds the chosen architecture template's own
 > `## Architecture Hard Rules` block. Do not put architecture-specific rules (UseCases, MVI contracts, base classes)
 > in this file. They belong in the architecture template.

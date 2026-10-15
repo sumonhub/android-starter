@@ -1,12 +1,12 @@
 # Feature Template: MVI + Clean Architecture (feature-based, single module)
 
-> This template follows `.claude/templates/architecture/mvi-clean.md` and the Hard Rules in the
+> This template follows `templates/architecture/mvi-clean.md` and the Hard Rules in the
 > project's `CLAUDE.md`. It assumes the shared scaffold already exists: `core/mvi/`, `core/domain/`,
 > `core/error/`, `core/network/`, `core/ui/`, `navigation/`. Do not recreate any of these files
 > here. Only reference or extend them.
 
 > For naming, features without an API, and moving a feature from one screen to two, follow
-> `.claude/templates/shared/feature-conventions.md`.
+> `templates/shared/feature-conventions.md`.
 
 ## Tech stack
 - UI: Jetpack Compose
@@ -124,7 +124,7 @@ feature/<feature_name>/
 - Implements the domain repository interface.
 - Its constructor takes `<Feature>ApiService` and `<Feature>Mapper`. Koin injects both.
 - Every call goes through `safeApiCall(apiCall = { ... }, mapper = { ... }).toResult()` (or `safeUnitApiCall { ... }.toResult()`) from `core/network/SafeApiCall.kt`.
-  - Follow the "RepositoryImpl usage" example in `.claude/templates/architecture/mvi-clean.md` exactly.
+  - Follow the "RepositoryImpl usage" example in `templates/architecture/mvi-clean.md` exactly.
   - Never write your own `try/catch` or `response.isSuccessful` check.
   - `safeApiCall` already maps HTTP, envelope and connectivity errors to `Failure`.
 - **This is the only place `NetworkResult` and Retrofit types are visible.** Nothing above this file ever sees them. This follows the project's Hard Rules.
@@ -153,7 +153,7 @@ feature/<feature_name>/
   - No business logic inside Composables. They only render state and call `processIntent`.
   - Use `LaunchedEffect` to collect one-time Effects (navigation, snackbar) from `viewModel.effect`.
   - All image loading uses Coil's `AsyncImage` composable. Do not use manual Bitmap loading or other caching libs.
-  - Compose the body inside `AppScreen`, as in the "Screen usage" example in `.claude/templates/shared/ui-components.md`. Pass:
+  - Compose the body inside `AppScreen`, as in the "Screen usage" example in `templates/shared/ui-components.md`. Pass:
     - `loading = LoadingState(state.status.isLoading)`
     - `snackbarMessage = state.status.toErrorMessage(onRetry = ..., onDismiss = ...)`
     - `empty = EmptyState(...).takeIf { !state.status.isLoading && <no data> }`
@@ -183,7 +183,7 @@ feature/<feature_name>/
 - **Returning a value** (pickers):
   - The picker screen sends its result back with `navController.setNavResult(NavResultKeys.X, value)` + `popBackStack()` in `AppNavGraph`.
   - The caller registers `entry.NavResultEffect(NavResultKeys.X) { ... }`.
-  - See `.claude/templates/shared/core-utils.md`.
+  - See `templates/shared/core-utils.md`.
 - **Dialogs & sheets**: use a `showXDialog` / `showXSheet` State flag with `AppConfirmDialog` / `AppBottomSheet` / `SearchableBottomSheet`.
 - **Dates**: the mapper parses server dates with `DateTimeFormat.parseInstant` / `parseDate`. The Screen formats them with `DateTimeFormat.date(...)` etc.
 - **Tests** (`app/src/test/java/<package>/feature/<feature_name>/`): generate them with the feature.
