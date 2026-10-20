@@ -83,7 +83,7 @@ Run these steps in order. If any step stops, nothing has changed yet.
    - **Replace:** files that both templates list, but with different contents (e.g. the base ViewModel, `MainActivity`, the error → snackbar converter in `AppSnackbar.kt`)
    - **Add:** files that only the new template lists
    - **Keep, untouched:** files under `core/` or `navigation/` that neither template lists (someone added them by hand). List them, so the person knows they may no longer fit the new pattern. Let Step 7 flag them
-   - **Keep, untouched:** everything already in place that doesn't depend on the architecture: `project-setup.md` output (build types, signing, keep rules, splash, ktlint, CI), `core-utils.md` files, `core/ui/components/` (except the converter), `core/ui/theme/`, `docs/`, and any real `BASE_URL` values
+   - **Keep, untouched:** everything already in place that doesn't depend on the architecture: `core-infra.md` output (except a `MainActivity.kt` that must move, because MVI + Clean keeps it in `navigation/`), `project-setup.md` output (build types, signing, keep rules, splash, ktlint, CI), `core-utils.md` files, `core/ui/components/` (except the converter), `core/ui/theme/`, `docs/`, and any real `BASE_URL` values
    - **Gradle:** if the new template needs dependencies that are missing, add them. For dependencies that only the old template used, list them and ask whether to remove them. Never remove one silently
 4. **Show the plan and confirm.** Show the full plan as file lists. Include the `CLAUDE.md` changes from Step 5's "Switch" procedure. Continue only after an explicit confirmation that names the switch, e.g. "yes, switch from MVI + Clean to MVVM". Any other answer, including a plain "yes", means you ask again.
 5. **Apply** the plan. Then continue with Step 5 ("Switch"), Step 6 and Step 7.
@@ -92,12 +92,12 @@ Run these steps in order. If any step stops, nothing has changed yet.
 
 Ask the user which pattern they want. Use a single message with clear options:
 
-1. MVVM — *outline only*
-2. MVVM + Clean Architecture — *outline only*
-3. MVI — *outline only*
-4. MVI + Clean Architecture — **fully supported (recommended)**
+1. MVVM
+2. MVVM + Clean Architecture
+3. MVI
+4. MVI + Clean Architecture — **recommended**
 
-"Outline only" templates list the structure, dependencies and base classes. They don't give the full contents of every core file. (A matching feature template exists for all four.) Say this when you present the options, so the person knows that more will be inferred if they pick one.
+All four are fully supported: each architecture template, together with `templates/shared/core-infra.md`, gives the full code of every core file, and each has a matching feature template. When you present the options, add one line on the difference: plain MVVM/MVI have no UseCase layer (the ViewModel calls the Repository), the Clean versions add a `domain/` layer with UseCases, and MVI + Clean also adds typed `Failure` errors and a `Result` type.
 
 Wait for their answer. Do not continue on a guess. If their answer is unclear, ask again.
 
@@ -129,6 +129,7 @@ Follow the template's folder structure and file contents exactly.
   Never leave two themes side by side.
 - Every core/shared file must stay feature-agnostic. It must not import anything feature-specific.
 - Use the template's defaults from Step 3 for the base URL placeholder, JSON parser and local storage.
+- For every architecture, create every file in `${CLAUDE_PLUGIN_ROOT}/templates/shared/core-infra.md` (App, MainActivity, DI modules, network client, logger, theme), exactly as written there. Its file locations follow the template's Project Structure.
 - For every architecture, create `core/ui/components/` from `${CLAUDE_PLUGIN_ROOT}/templates/shared/ui-components.md` (every component, plus the converter for the chosen architecture). Also add the Dimens tokens and string resources it lists.
 - For every architecture, apply `${CLAUDE_PLUGIN_ROOT}/templates/shared/project-setup.md` (environments, signing, R8 keep rules, splash screen, unit-test setup, ktlint, CI workflow). Also create every file in `${CLAUDE_PLUGIN_ROOT}/templates/shared/core-utils.md` (`Validator`, `InputLimits`, `DateTimeFormat`, `NavResult`).
 - For every architecture, also create the reference docs from `${CLAUDE_PLUGIN_ROOT}/templates/shared/reference-docs.md` at the repo root:

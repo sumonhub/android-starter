@@ -55,8 +55,12 @@ Commit this to a project's `.claude/settings.json`. Everyone who opens the proje
 
 | Pattern | Status |
 |---|---|
-| MVI + Clean Architecture | Fully supported: complete scaffold template with full code |
-| MVI, MVVM, MVVM + Clean | The scaffold template is an outline (structure, dependencies, base classes) |
+| MVVM | Fully supported: complete scaffold template with full code |
+| MVVM + Clean Architecture | Fully supported: complete scaffold template with full code |
+| MVI | Fully supported: complete scaffold template with full code |
+| MVI + Clean Architecture | Fully supported: complete scaffold template with full code (recommended) |
+
+Code that is the same for every architecture (App, MainActivity, DI modules, network client, logger, theme) lives in `templates/shared/core-infra.md`.
 
 Every architecture has its own feature template for `/android-starter:generate-feature`.
 

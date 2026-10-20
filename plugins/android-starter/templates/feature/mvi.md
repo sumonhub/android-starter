@@ -72,8 +72,8 @@ feature/<feature_name>/
 
 ### data/`<Feature>Repository.kt`
 - A concrete class. Its constructor takes `<Feature>ApiService`.
-- Every call goes through `safeApiCall { api.getList() }` from `core/network`. Never write your own `try/catch` or `response.isSuccessful` check here.
-- Before returning, it maps a `NetworkResult.Success` DTO to the model: `suspend fun getList(): NetworkResult<List<<Feature>>>`
+- Every call goes through `safeApiCall { api.getList() }` from `core/network`, or `safeUnitApiCall { ... }` for an endpoint with no response body. Never write your own `try/catch` or `response.isSuccessful` check here.
+- Before returning, it maps the DTO to the model with `NetworkResult.map`: `suspend fun getList(): NetworkResult<List<<Feature>>> = safeApiCall { api.getList() }.map { dtos -> dtos.map { it.toModel() } }`
 - Retrofit suspend calls are main-safe. Inject a dispatcher (`get(named("io"))`) only if the repository itself does blocking or heavy work.
 
 ### presentation/ — for EACH screen
