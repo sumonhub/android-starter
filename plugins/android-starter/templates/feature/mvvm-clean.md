@@ -97,8 +97,8 @@ feature/<feature_name>/
 
 ### data/repository/`<Feature>RepositoryImpl.kt`
 - Implements the domain interface. Its constructor takes `<Feature>ApiService`.
-- Every call goes through `safeApiCall { api.getList() }` from `core/network`. Never write your own `try/catch` or `response.isSuccessful` check here.
-- Before returning, it maps the DTO to the domain model. DTOs never leave `data/`.
+- Every call goes through `safeApiCall { api.getList() }` from `core/network`, or `safeUnitApiCall { ... }` for an endpoint with no response body. Never write your own `try/catch` or `response.isSuccessful` check here.
+- Before returning, it maps the DTO to the domain model with `NetworkResult.map`: `safeApiCall { api.getList() }.map { dtos -> dtos.map { it.toDomain() } }`. DTOs never leave `data/`.
 - Retrofit suspend calls are main-safe. Inject a dispatcher (`get(named("io"))`) only if the implementation itself does blocking or heavy work.
 
 ### presentation/ — for EACH screen

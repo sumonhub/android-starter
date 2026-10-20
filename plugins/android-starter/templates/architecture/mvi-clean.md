@@ -115,9 +115,7 @@ app/src/main/java/com/example/app/
 │   ├── AppNavGraph.kt                              # NavHost(startDestination = Routes.Home) — placeholder composable<Routes.Home> (the system splash comes first, no Splash route)
 │   │                                               # Leave comment: // composable<Routes.FeatureX> { ... } added when features are generated
 │   ├── NavResult.kt                                # setNavResult / NavResultEffect + NavResultKeys — shared/core-utils.md
-│   ├── Routes.kt                                   # sealed interface Routes — @Serializable route objects/data classes, one block per feature
-│   └── NavResult.kt                                # typed screen-to-screen passing via SavedStateHandle:
-│                                                   # setNavInput/navInput (forward) + setNavResult/navResult (back, as State<T?>)
+│   └── Routes.kt                                   # sealed interface Routes — @Serializable route objects/data classes, one block per feature
 │
 │
 └── feature/                                        # empty at scaffold time — features added via feature-generation pattern below
@@ -249,35 +247,20 @@ Add:
 ### Step 2: Create folder structure
 Create it exactly as shown above. The `feature/` folder is empty at scaffold time. Only `core/` and `navigation/` have files.
  
-### Step 3: App.kt
-```kotlin
-startKoin {
-    androidLogger()
-    androidContext(this@App)
-    modules(coreModules)
-    // Feature modules added here later, e.g.:
-    // modules(coreModules + listOf(authModule, orderModule))
-}
-```
- 
-### Step 4: Network layer (`core/network/` + `NetworkModule.kt`)
+### Step 3: Shared core infra
+Create every file in `templates/shared/core-infra.md`, exactly as written there:
+- `App.kt`, `navigation/MainActivity.kt`
+- `core/di/`: `CoreModules.kt`, `NetworkModule.kt`, `LocalStorageModule.kt`, `DispatcherModule.kt`
+- `core/network/`: `ApiConfig.kt`, `AuthTokenProvider.kt`, `NetworkClient.kt`
+- `core/util/`: `AppLogger.kt`, `Extensions.kt`
+- `core/ui/theme/`: `Color.kt`, `Typography.kt`, `Shape.kt`, `Dimens.kt`, `Theme.kt`
+
+That file also holds the rules for the network client, local storage and dispatchers.
+
+### Step 4: Network results (`core/network/`)
 
 **Rules**
-- The whole app has one OkHttpClient and one Retrofit. `NetworkClient` builds them. `NetworkModule` provides them as `single`s.
-- Features use `get<Retrofit>().create(FeatureXApiService::class.java)`. They never build their own Retrofit/OkHttp.
 - Only `RepositoryImpl` touches Retrofit, and only through `safeApiCall` / `safeUnitApiCall`. Never write a `try/catch` by hand around an API call. `.toResult()` turns the `NetworkResult` into the domain `Result` before it leaves the repository.
-- Add the logging interceptor **only** `if (BuildConfig.DEBUG)`. Never comment it out "temporarily". It masks passwords / OTPs / PINs / tokens in bodies, even in debug.
-- **Never slow down the network layer on purpose.** For example: `Thread.sleep`, `delay`, or a "minimum duration" interceptor. If a loader shows for too short a time, that is a UI problem. `rememberMinimumLoading` in `AppScreen` (Step 8) handles it without delaying the data.
-
-**`ApiConfig.kt`**
-```kotlin
-object ApiConfig {
-    val BASE_URL: String = BuildConfig.BASE_URL // one per build type — see shared/project-setup.md
-    const val CONNECT_TIMEOUT_SECONDS = 30L
-    const val READ_TIMEOUT_SECONDS = 30L
-    const val WRITE_TIMEOUT_SECONDS = 30L
-}
-```
 
 **`ApiResponse.kt`** is the backend's response envelope. **Change it to match your backend's real shape.** If you do not know the shape, ask. Never guess.
 ```kotlin
@@ -481,27 +464,9 @@ class OrderRepositoryImpl(
 }
 ```
 
-### Step 5: LocalStorageModule.kt
-- Create one `DataStore<Preferences>` with `preferencesDataStore(name = "app_prefs")`
-- Features inject `get<DataStore<Preferences>>()`. They never create their own instance.
-- **Sensitive data** (auth token, user session, anything PII) → **always** this DataStore. Never `SharedPreferences`.
-- **Non-sensitive data** (e.g. app language, theme flag, "onboarding seen") → `SharedPreferences` is allowed. This is useful when the value must be read synchronously before Koin/DataStore are ready (e.g. locale in `attachBaseContext`).
-  - Put it behind one small `core/util` helper (e.g. `LocaleManager`) with a named key constant. Never call `getSharedPreferences` / `PreferenceManager` directly from a Composable or from feature code.
-  - If you are not sure whether a value is sensitive, treat it as sensitive and use DataStore.
-### Step 5b: DispatcherModule.kt
-```kotlin
-val dispatcherModule = module {
-    single(named("io")) { Dispatchers.IO }
-    single(named("main")) { Dispatchers.Main }
-    single(named("default")) { Dispatchers.Default }
-}
-```
-- This is the **only** file in the app that may reference `Dispatchers.*`
-- Every class that switches threads takes a `CoroutineDispatcher` constructor param. Koin passes the named one. This applies to UseCases (`factory { GetFeatureXUseCase(get(), get(named("io"))) }`) **and** to non-UseCase helpers too (e.g. a `core/util/LocationProvider` doing `withContext(ioDispatcher) { ... }`).
-- Never write `withContext(Dispatchers.IO)` / `launch(Dispatchers.Default)` inline. Tests can't swap it for a test dispatcher.
-### Step 6: Domain contracts
+### Step 5: Domain contracts
  
-**`Failure.kt`** is pure Kotlin, with no UI or string resources. The user-facing `Failure.toMessage()` lives in `AppSnackbar.kt` (see Step 8).
+**`Failure.kt`** is pure Kotlin, with no UI or string resources. The user-facing `Failure.toMessage()` lives in `AppSnackbar.kt` (see Step 7).
 ```kotlin
 sealed class Failure {
     data object NoInternet : Failure()
@@ -560,7 +525,7 @@ interface Mapper<in I, out O> {
 }
 ```
  
-### Step 7: MVI markers + UiStatus + BaseViewModel.kt
+### Step 6: MVI markers + UiStatus + BaseViewModel.kt
 
 **Markers** are plain `interface`s, never `sealed`. Kotlin only lets code in the same package implement a sealed type. So `feature/*` could never implement a sealed core marker.
 ```kotlin
@@ -661,7 +626,7 @@ LaunchedEffect(Unit) {
 }
 ```
  
-### Step 8: UI components (`core/ui/components/`)
+### Step 7: UI components (`core/ui/components/`)
 
 Create every component in `templates/shared/ui-components.md`, exactly as written there:
 - `AppScreen`, `AppSnackbar`, `AppTopBar`, `AppButton`, `AppChip`, `Avatar`, `LoadingIndicator`, `ErrorView`, `EmptyView`
@@ -673,7 +638,7 @@ Screens follow the shared file's "Screen usage" example:
 - pass `state.status.isLoading` to `LoadingState`
 - pass `state.status.toErrorMessage(onRetry = { viewModel.processIntent(XIntent.Retry) }, onDismiss = { viewModel.processIntent(XIntent.ErrorDismissed) })` to `snackbarMessage`
 
-### Step 9: Project setup + core utilities
+### Step 8: Project setup + core utilities
 
 Apply all of `templates/shared/project-setup.md`:
 - environments (debug/staging/release `BASE_URL`)
@@ -686,7 +651,7 @@ Apply all of `templates/shared/project-setup.md`:
 
 Then create every file in `templates/shared/core-utils.md`: `core/util/Validator.kt`, `InputLimits.kt`, `DateTimeFormat.kt` and `navigation/NavResult.kt`.
 
-### Step 10: Navigation shell
+### Step 9: Navigation shell
  
 **`Routes.kt`**
 ```kotlin
@@ -699,13 +664,22 @@ sealed interface Routes {
  
 **`AppNavGraph.kt`**
 ```kotlin
-NavHost(navController, startDestination = Routes.Home) {
-    composable<Routes.Home> { /* blank themed placeholder screen inside AppScreen */ }
-    // composable<Routes.FeatureX> { FeatureXScreen() } — added when features are generated
+@Composable
+fun AppNavGraph(navController: NavHostController = rememberNavController()) {
+    NavHost(navController = navController, startDestination = Routes.Home) {
+        composable<Routes.Home> { HomePlaceholder() }
+        // composable<Routes.FeatureX> { FeatureXScreen() } — added when features are generated
+    }
+}
+
+/** Blank themed screen until the first feature replaces the start destination. */
+@Composable
+private fun HomePlaceholder() {
+    AppScreen(refresh = null) {}
 }
 ```
  
-### Step 11: Verify
+### Step 10: Verify
 - `./gradlew ktlintCheck testDebugUnitTest assembleDebug` passes. The app launches and shows the system splash screen first.
 - The project builds with zero features.
 - The app launches to a blank themed screen. This proves Koin + Theme + NavGraph are wired.
